@@ -1,0 +1,26 @@
+#!/bin/bash
+
+credential=/usr/src/credential
+source $credential
+
+generate_post_data()
+{
+  cat <<EOF
+  {
+    "auth": {
+    "passwordCredentials": {
+    "username":"${USERNAME}",
+    "password":"${PASSWORD}"
+    },
+  "tenantId":"${TENANT_ID}"
+   }
+  }
+EOF
+}
+
+token=`curl -s -X POST -H "Accept: application/json" -d "$(generate_post_data)" ${IDENT_URL}/tokens | jq ".access.token.id" | tr -d '\"'`
+
+sed -i "s/^TOKEN=.*$/TOKEN=${token}/" ${credential}
+exit 0
+
+

@@ -1,0 +1,30 @@
+#!/bin/bash
+credential=/usr/src/credential
+source $credential
+func_usage ()
+{
+  echo '##USAGE##'
+  echo "  $0 -c ContainerName -o ObjectName"
+  exit 1
+}
+
+while getopts c:o: OPT
+do
+  case $OPT in
+    "c" ) CNAME="$OPTARG" ;;
+    "o" ) ONAME="$OPTARG" ;;
+     * ) func_usage ;;
+  esac
+done
+
+if [ -z ${CNAME} ] || [ -z ${ONAME} ]; then
+  func_usage
+fi
+
+curl -s -X DELETE \
+-H "Accept: application/json" \
+-H "Content-Type: application/json" \
+-H "X-Auth-Token: ${TOKEN}" \
+${OBJ_URL}/${OBJ_PREFIX}${TENANT_ID}/${CNAME}/${ONAME}
+
+exit 0

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# update user's plan
+GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+function usage()
+{
+   echo " Usage $0 -u user -p plan_number"
+   exit 1
+}
+while getopts u:p: OPT
+	do
+		case $OPT in
+		 "u" ) AMAN="$OPTARG" ;;
+		 "p" ) PLAN="$OPTARG" ;;
+		 "*" ) usage ;;
+		esac
+	done
+if [ -z ${AMAN} ] || [ -z ${PLAN} ]; then
+	usage
+fi
+current_plan()
+{
+mysql -p$GetP kusanagi -e "select plan_id from account where login_id='$1' \G" | tail -n 1 | awk '{print $2}'
+}
+cplan=$( current_plan $AMAN )
+
+dquota[1]=2048
+dquota[2]=5120
+dquota[3]=20480
+iquota[1]=100000
+iquota[2]=100000
+iquota[3]=250000
+pkg[1]='Start'
+pkg[2]='Business'
+pkg[3]='Professional'
+bhard=${dquota[$PLAN]}
+let bsoft=bhard-100
+ihard=${iquota[$PLAN]}
+let isoft=ihard-10000
+
+if [ $PLAN -eq $cplan ]; then
+echo " $AMAN is currently choosing package $PLAN"
+else
+# update disk quota
+xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /
+xfs_quota -x -c 'limit -g bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /
+# update inode quota
+xfs_quota -x -c 'limit isoft='$isoft' ihard='$ihard' '$AMAN'' /
+xfs_quota -x -c 'limit -g isoft='$isoft' ihard='$ihard' '$AMAN'' /
+# update lve limit
+uid=`id -u $AMAN`
+sed -i '/'$uid'/d' /var/superpanel/user_package
+sed -i '/'$uid',/d' /var/superpanel/users
+echo $uid ${pkg[$PLAN]} >> /var/superpanel/user_package
+echo $uid","${pkg[$PLAN]}"," >> /var/superpanel/users
+lvectl apply $uid
+# update plan_id in account table
+mysql -p$GetP kusanagi -e "UPDATE account SET plan_id =$PLAN WHERE login_id ='$AMAN'"
+fi
+
+exit 0

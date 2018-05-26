@@ -1,0 +1,10 @@
+#!/bin/bash
+srv_hostname=`hostname`
+declare -a list=("kusanagi" "mysql" "proxy")
+for i in "${list[@]}"
+do
+	dest="/home/kusanagi/${i}.sql.gz"
+	mysqldump --single-transaction -ubk_user -pbk_Passw0rd --databases $i | gzip > $dest
+	cp $dest /backup/$srv_hostname/ 2>&1 > /dev/null
+	/usr/src/obj-upload-file -c sqlbackup/$srv_hostname -f $dest
+done

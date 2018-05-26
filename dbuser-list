@@ -1,0 +1,11 @@
+#!/bin/bash
+
+dbuser_list()
+{
+local i=0
+cat /etc/kusanagi.d/profile.conf | grep '"'$1'"' -B 4 | grep DBUSER | cut -d '"' -f 2 |\
+while read dbuser; do
+	echo $((++i))". "$dbuser
+done
+}
+dbuser_list $1
