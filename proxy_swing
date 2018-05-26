@@ -1,0 +1,49 @@
+#!/bin/bash
+usage ()
+{
+  echo " proxy swing"
+  echo " Usage : $0 -d provision_name -p proxy_id (proxy_id <> 0)"
+  exit 1
+}
+
+while getopts d:p: OPT
+  do
+    case $OPT in
+		 "d" ) prov_name="$OPTARG" ;;
+         "p" ) proxy_id="$OPTARG" ;;
+         * ) func_usage ;;
+    esac
+  done
+
+if [ -z ${proxy_id} ] || [ -z ${prov_name} ] || [ ${proxy_id} -eq 0 ]; then
+  usage
+fi
+
+## locate the current proxy address of the provision
+pwrd="PasSw0rd"
+current_id=`mysql -upr0xy -p$pwrd -e "select proxy_id from proxy.pair where provision_name = '$prov_name'" | tail -n 1`
+
+## move to new place
+# update table proxy.pair
+mysql -upr0xy -p$pwrd -e " update proxy.pair set proxy_id = "$proxy_id" where provision_name = '$prov_name'"
+
+# update configuration directory
+source /usr/src/list_proxy_by_pairs
+let i=${proxy_id}-1
+let j=${current_id}-1
+if [ $current_id -gt 0 ]; then
+#	rm -f /etc/proxy/${current_id}/${prov_name}_*
+	# remove nginx configuration from current proxy server
+	ssh -p1010 root@proxy${current_id} 'rm -f /etc/nginx/conf.d/'${prov_name}'_*'
+	ssh -p1010 root@proxy${proxy_pair[$j]} 'rm -f /etc/nginx/conf.d/'${prov_name}'_*'
+#	cp /etc/proxy/0/${prov_name}_* /etc/proxy/${proxy_id}/
+	# sync nginx configuration
+	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_id}:/etc/nginx/conf.d/
+	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_pair[$i]}:/etc/nginx/conf.d/
+else
+	#cp /etc/proxy/0/${prov_name}_* /etc/proxy/${proxy_id}/
+	# sync nginx configuration
+	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_id}:/etc/nginx/conf.d/
+	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_pair[$i]}:/etc/nginx/conf.d/
+fi
+
