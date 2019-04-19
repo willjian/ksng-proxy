@@ -16,7 +16,18 @@ function k_readkey_yn() {
 		fi
 	done
 }
-
+check_lets_existed()
+{
+    if [ -d "/etc/letsencrypt/archive/${1}" ]; then
+        echo 1
+    else
+        if [ 0 -eq $(ls /etc/letsencrypt/archive/${1}-* > /dev/null 2>&1;echo $?) ]; then
+            echo 1
+        else
+            echo 0
+        fi
+    fi
+}
 function k_remove() {
 	local _PROV=1
 	local YESFLAG=
@@ -92,12 +103,10 @@ function k_remove() {
 		rm -rf /var/log/${TARGET}
 	fi
 	# remove backup command
-	sed -i '/'$TARGET'/d' /etc/cron.daily/backup-prov
-	sed -i '/'$TARGET'/d' /etc/cron.weekly/cleanbk-prov
-	# remove dbuser from dbuser-map
-	#sed -i '/'$KUSANAGI_DBUSER'/d' /etc/container/dbuser-map
+	sed -i '/d '$TARGET'$/d' /etc/cron.daily/backup-prov
+	sed -i '/d '$TARGET'$/d' /etc/cron.weekly/cleanbk-prov
 	# remove proxy configuration corresponding
-	rm -f /etc/proxy/${TARGET}*
+	rm -f /etc/proxy/${TARGET}"_"*
 	# remove proxy_id entry
 	pwrd=`cat /root/.my.cnf | grep password | cut -d '"' -f2`
 	current_id=`mysql -p$pwrd -e "select proxy_id from proxy.pair where provision_name = '${TARGET}'" | tail -n 1`
@@ -105,7 +114,23 @@ function k_remove() {
 	[ $current_id -gt 0 ] && ssh -p1010 root@proxy${current_id} 'rm -f /etc/nginx/conf.d/'${TARGET}'_*'
 	[ $current_id -gt 0 ] && ssh -p1010 root@proxy${proxy_pair[$i]} 'rm -f /etc/nginx/conf.d/'${TARGET}'_*'
 	mysql -p$pwrd -e "delete from proxy.pair where provision_name = '${TARGET}'"
-	
+	# kld_remove lets cert
+	if [ 1 -eq $(check_lets_existed $KUSANAGI_FQDN) ]; then
+		if [ -d "/etc/letsencrypt/archive/$KUSANAGI_FQDN" ]; then
+	        mv /etc/letsencrypt/archive/$KUSANAGI_FQDN /opt/maintenance/lets_tools/archive.deleted/
+	        mv /etc/letsencrypt/live/$KUSANAGI_FQDN /opt/maintenance/lets_tools/live.deleted/
+	    fi
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/${KUSANAGI_FQDN}-* > /dev/null 2>&1;echo $?) ]; then
+		    mv /etc/letsencrypt/archive/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/archive.deleted/
+		    mv /etc/letsencrypt/live/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/live.deleted/
+		fi
+		if [ -f "/etc/letsencrypt/renewal/${KUSANAGI_FQDN}.conf" ]; then
+            mv /etc/letsencrypt/renewal/${KUSANAGI_FQDN}.conf /opt/maintenance/lets_tools/recycle_bin/
+        fi
+        if [ 0 -eq  $(ls /etc/letsencrypt/renewal/${KUSANAGI_FQDN}-*.conf >/dev/null 2>&1;echo $?) ]; then
+            mv /etc/letsencrypt/renewal/${KUSANAGI_FQDN}-*.conf /opt/maintenance/lets_tools/recycle_bin/
+        fi
+	fi
 	# remove db
 	if [ $REMOVE_DATABASE ] ; then
 		local DB_ROOT_PASS=$(get_db_root_password)
