@@ -117,18 +117,22 @@ function k_remove() {
 	# kld_remove lets cert
 	if [ 1 -eq $(check_lets_existed $KUSANAGI_FQDN) ]; then
 		if [ -d "/etc/letsencrypt/archive/$KUSANAGI_FQDN" ]; then
-	        mv /etc/letsencrypt/archive/$KUSANAGI_FQDN /opt/maintenance/lets_tools/archive.deleted/
-	        mv /etc/letsencrypt/live/$KUSANAGI_FQDN /opt/maintenance/lets_tools/live.deleted/
+	        cp -rf /etc/letsencrypt/archive/$KUSANAGI_FQDN /opt/maintenance/lets_tools/archive.deleted/
+	        cp -rf /etc/letsencrypt/live/$KUSANAGI_FQDN /opt/maintenance/lets_tools/live.deleted/
+			rm -rf /etc/letsencrypt/archive/$KUSANAGI_FQDN
+			rm -rf /etc/letsencrypt/live/$KUSANAGI_FQDN
 	    fi
 		if [ 0 -eq $(ls /etc/letsencrypt/archive/${KUSANAGI_FQDN}-* > /dev/null 2>&1;echo $?) ]; then
-		    mv /etc/letsencrypt/archive/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/archive.deleted/
-		    mv /etc/letsencrypt/live/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/live.deleted/
+		    cp -rf /etc/letsencrypt/archive/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/archive.deleted/
+		    cp -rf /etc/letsencrypt/live/${KUSANAGI_FQDN}-* /opt/maintenance/lets_tools/live.deleted/
+			rm -rf /etc/letsencrypt/archive/${KUSANAGI_FQDN}-*
+			rm -rf /etc/letsencrypt/live/${KUSANAGI_FQDN}-*
 		fi
 		if [ -f "/etc/letsencrypt/renewal/${KUSANAGI_FQDN}.conf" ]; then
-            mv /etc/letsencrypt/renewal/${KUSANAGI_FQDN}.conf /opt/maintenance/lets_tools/recycle_bin/
+            mv -f /etc/letsencrypt/renewal/${KUSANAGI_FQDN}.conf /opt/maintenance/lets_tools/recycle_bin/
         fi
         if [ 0 -eq  $(ls /etc/letsencrypt/renewal/${KUSANAGI_FQDN}-*.conf >/dev/null 2>&1;echo $?) ]; then
-            mv /etc/letsencrypt/renewal/${KUSANAGI_FQDN}-*.conf /opt/maintenance/lets_tools/recycle_bin/
+            mv -f /etc/letsencrypt/renewal/${KUSANAGI_FQDN}-*.conf /opt/maintenance/lets_tools/recycle_bin/
         fi
 	fi
 	# remove db
