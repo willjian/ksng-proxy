@@ -111,18 +111,18 @@ echo "/usr/src/cleanup-bk -u $CUSTOM_USER -d $PROFILE" >> /etc/cron.weekly/clean
 
 RET=0
 # setting ssl cert files
-if [ "" != "$MAILADDR" ] && [ -e $CERTBOT ]; then
+#if [ "" != "$MAILADDR" ] && [ -e $CERTBOT ]; then
 	# restart nginx or httpd server
 	#k_restart nginx //comment for avoiding disconnection with cPanel
-	k_reload nginx
+#	k_reload nginx
 	# enable ssl
-	source $LIBDIR/ssl.sh
-	enable_ssl  $PROFILE $MAILADDR $FQDN
-	RET=$?
-	if [ $RET -eq 0 ] ; then
-		k_autorenewal --auto on
-	fi
-fi
+#	source $LIBDIR/ssl.sh
+#	enable_ssl  $PROFILE $MAILADDR $FQDN
+#	RET=$?
+#	if [ $RET -eq 0 ] ; then
+#		k_autorenewal --auto on
+#	fi
+#fi
 
 if [ $RET -eq 0 ] ; then
 	# reload services
