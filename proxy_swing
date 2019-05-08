@@ -18,6 +18,28 @@ while getopts d:p: OPT
 if [ -z ${proxy_id} ] || [ -z ${prov_name} ] || [ ${proxy_id} -eq 0 ]; then
   usage
 fi
+FQDN=`cat /etc/kusanagi.d/profile.conf | grep 'PROFILE="'$prov_name'"' -A 2 | grep "KUSANAGI_FQDN" | cut -d '"' -f2`
+check_cert_existed ()
+{
+	if [ -f "/etc/pki/tls/certs/${1}.crt" ]; then echo 1; else echo 0; fi
+}
+check_lets_existed ()
+{
+	if [ -d "/etc/letsencrypt/archive/${1}" ]; then
+		echo 1
+	else
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/${1}-* > /dev/null 2>&1;echo $?) ]; then
+			echo 1
+		else
+			echo 0
+		fi
+	fi
+	#if [ -d "/etc/letsencrypt/live/${1}" ]; then echo 1; else echo 0; fi
+}
+cert_exist=$(check_cert_existed ${FQDN})
+lets_exist=$(check_lets_existed ${FQDN})
+
+echo "debug  $cert_exist -- $lets_exist"
 
 ## locate the current proxy address of the provision
 pwrd="PasSw0rd"
@@ -32,18 +54,32 @@ source /usr/src/list_proxy_by_pairs
 let i=${proxy_id}-1
 let j=${current_id}-1
 if [ $current_id -gt 0 ]; then
-#	rm -f /etc/proxy/${current_id}/${prov_name}_*
 	# remove nginx configuration from current proxy server
 	ssh -p1010 root@proxy${current_id} 'rm -f /etc/nginx/conf.d/'${prov_name}'_*'
 	ssh -p1010 root@proxy${proxy_pair[$j]} 'rm -f /etc/nginx/conf.d/'${prov_name}'_*'
-#	cp /etc/proxy/0/${prov_name}_* /etc/proxy/${proxy_id}/
-	# sync nginx configuration
-	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_id}:/etc/nginx/conf.d/
-	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_pair[$i]}:/etc/nginx/conf.d/
-else
-	#cp /etc/proxy/0/${prov_name}_* /etc/proxy/${proxy_id}/
-	# sync nginx configuration
-	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_id}:/etc/nginx/conf.d/
-	rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}* root@proxy${proxy_pair[$i]}:/etc/nginx/conf.d/
 fi
 
+# sync nginx configuration
+[ $cert_exist -eq 1 ] && rsync -avzhe 'ssh -p1010' /etc/pki/tls/certs/${FQDN}.crt root@proxy${proxy_id}:/etc/pki/tls/certs/ \
+&& rsync -avzhe 'ssh -p1010' /etc/pki/tls/certs/${FQDN}.crt root@proxy${proxy_pair[$i]}:/etc/pki/tls/certs/
+[ $cert_exist -eq 1 ] && rsync -avzhe 'ssh -p1010' /etc/pki/tls/private/${FQDN}.key root@proxy${proxy_id}:/etc/pki/tls/private/ \
+&& rsync -avzhe 'ssh -p1010' /etc/pki/tls/private/${FQDN}.key root@proxy${proxy_pair[$i]}:/etc/pki/tls/private/
+	
+[ $lets_exist -eq 1 ] && rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${FQDN} root@proxy${proxy_id}:/etc/letsencrypt/live/ \
+&& rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${FQDN} root@proxy${proxy_pair[$i]}:/etc/letsencrypt/live/
+[ $lets_exist -eq 1 ] && rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${FQDN} root@proxy${proxy_id}:/etc/letsencrypt/archive/ \
+   && rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${FQDN} root@proxy${proxy_pair[$i]}:/etc/letsencrypt/archive/
+
+if [ $lets_exist -eq 1 ]; then
+	if [ 0 -eq $(ls /etc/letsencrypt/archive/${FQDN}-* > /dev/null 2>&1;echo $?) ]; then
+		rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${FQDN}-* root@proxy${proxy_id}:/etc/letsencrypt/live/
+		rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${FQDN}-* root@proxy${proxy_pair[$i]}:/etc/letsencrypt/live/
+		rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${FQDN}-* root@proxy${proxy_id}:/etc/letsencrypt/archive/
+		rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${FQDN}-* root@proxy${proxy_pair[$i]}:/etc/letsencrypt/archive/
+	fi
+fi
+
+rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}_* root@proxy${proxy_id}:/etc/nginx/conf.d/
+rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_name}_* root@proxy${proxy_pair[$i]}:/etc/nginx/conf.d/
+
+echo "$(date +%Y-%m-%d_%H:%M) - move to proxy $proxy_id" >> /var/log/${prov_name}/${prov_name}_proxy.log
