@@ -1,0 +1,33 @@
+#!/bin/bash
+
+function usage()
+{
+	echo " $0 -u user_name"
+	exit 1
+}
+
+while getopts u: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		"*" ) usage ;;
+		esac
+	done
+if [ -z ${user_} ]; then
+	usage
+fi
+srv_name=`hostname`
+log=/opt/migrate/departure/prov_list_${user_}.log
+mysql -ubk_user -pbk_Passw0rd -e "select domain,provision_name,db_name,db_user,db_password,email from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" > $log
+sed -i '/domain/s/$/ latest_backup,server_name/' $log
+sed -i '/^domain/ s/^/login_id,/' $log
+sed -i 's/\s/,/g' $log
+cat $log | tail -n +2 | \
+while read line; do
+	prov=`echo $line | cut -d ',' -f2`
+	dom=`echo $line | cut -d ',' -f1`
+	latest_bk=`/usr/src/collection-status -u $user_ -d $prov | tail -n 1 | sed 's/\//\\\\\//g'`
+	sed -i '/^'$dom',/s/$/,'$latest_bk'/' $log
+done
+sed -i '/^login_id/! s/$/,'$srv_name'/' $log
+sed -i '/^login_id/! s/^/'$user_',/' $log

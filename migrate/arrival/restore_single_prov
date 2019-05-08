@@ -1,0 +1,87 @@
+#!/bin/bash
+
+func_usage()
+{
+  echo " Usage: $0 -u user -p prov"
+  exit 1
+}
+while getopts u:p:d:t: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		"p" ) prov_="$OPTARG" ;;
+		* ) func_usage ;;
+		esac
+	done
+if [ -z ${user_} ] || [ -z ${prov_} ] ; then
+    func_usage
+fi
+
+w3-date ()
+{
+declare -A arrayDate
+arrayDate=( ["Jan"]=01 ["Feb"]=02 ["Mar"]=03 ["Apr"]=04 ["May"]=05 ["Jun"]=06 ["Jul"]=07 ["Aug"]=08 ["Sep"]=09 ["Oct"]=10 ["Nov"]=11 ["Dec"]=12 )
+time_in_day=`echo $1 |cut -d '-' -f2`
+mon=`echo $1 |cut -d '-' -f1| cut -d '/' -f2`
+mon=${arrayDate[$mon]}
+year=`echo $1 |cut -d '-' -f1| cut -d '/' -f1`
+day=`echo $1 |cut -d '-' -f1| cut -d '/' -f3`
+[ $day -lt 10 ] && day="0"$day
+echo $year"-"$mon"-"$day"T"$time_in_day"+07:00"
+}
+
+check_backup_file()
+{
+backup_list="/opt/migrate/arrival/backup_path_${1}.log"
+if [ -f $backup_list ]; then
+	dest_url=`cat $backup_list | cut -d ',' -f1`
+	time_=`cat $backup_list | cut -d ',' -f2`
+	echo $dest_url >> /var/log/$1/rest.log
+else
+	echo "Missing $backup_list file" >> /var/log/$1/rest.log
+	exit 1
+fi
+}
+
+restore_procedure()
+{
+#passwd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+check_backup_file $2
+w3date=$(w3-date ${time_})
+src_dir="/home/${1}/${2}"
+log_archive="/var/log/${2}/rest.log"
+today=`date +%Y-%m-%d-%H:%M:%S`
+echo $today >> $log_archive
+duplicity --time=${w3date} --no-encryption $dest_url $src_dir --force >> $log_archive
+ret=$?
+if [ $ret -eq 0 ]; then
+	db=`grep "/${2}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
+	sql_dir="/home/${1}/${2}/sqlbackup"
+	if [ -f $sql_dir/${db}.sql.gz ]; then
+		mysql  -p$passwd -e "drop database if exists $db"
+		mysql  -p$passwd -e "create database $db"
+		gunzip < $sql_dir/${db}.sql.gz | mysql  -p$passwd $db 
+		val=$?
+		queue_id=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select id from kusanagi_move.queue_users where login_id='$1' and status=0 and flg_run=1" | tail -n +2`
+		cre=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select create_pro from kusanagi_move.queue_provisions where provision_name='$2' and queue_user_id=$queue_id" | tail -n +2`
+		if [ 0 -eq $val ]; then
+		  if [ ! -z $cre ]; then
+			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set restore_pro=$cre where provision_name='$2' and queue_user_id=$queue_id"
+			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set status=1 where provision_name='$2' and queue_user_id=$queue_id"
+		  else
+			echo "record $2 does not exist" >> $log_archive
+		  fi
+		fi
+	else
+		echo $db".sql.gz does NOT exist" >> $log_archive
+		#echo 1
+	fi
+else
+	echo "Restoration failed ! Contact your provider for help!" >> $log_archive
+	#echo 1
+fi
+}
+passU=`cat /opt/migrate/departure/update_acc_passwd`
+passwd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+restore_procedure $user_ $prov_
+#check_backup_file $prov_

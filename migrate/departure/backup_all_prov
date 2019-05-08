@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# perform incremental backup
+func_usage()
+{
+  echo " Usage: $0 -u user -d dest_server(hostname)"
+  exit 1
+}
+while getopts u:d: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		"d" ) dest_="$OPTARG" ;;
+		* ) func_usage ;;
+		esac
+	done
+if [ -z ${user_} ] || [ -z ${dest_} ]; then
+    func_usage
+fi
+check_sql_dir_existed()
+{
+sql_dir="/home/${user_}/$1/sqlbackup"
+if [ ! -d "${sql_dir}" ] && [ -d "/home/${user_}/$1" ]; then
+	mkdir ${sql_dir}
+	chown -R ${user_}:${user_} ${sql_dir}
+	chmod 0777 ${sql_dir}
+fi
+}
+
+srv_hostname=`hostname`
+
+backup_procedure()
+{
+	log=/opt/migrate/departure/backup_path_${1}.log
+	db_log="/var/log/$1/db_backup_error.log"
+	echo -n '' > $db_log
+	check_sql_dir_existed $1
+	dob=`date +%Y-%m-%d`
+	db=`mysql -ubk_user -pbk_Passw0rd -e "select db_name from kusanagi.provision where provision_name = '$1' and deactive_flg = 0" | tail -n +2`
+	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -pbk_Passw0rd --databases $db 2> $db_log | gzip > ${sql_dir}/$db".sql.gz"
+	ignore_log="/var/log/$1/ignore_bk.log"
+	echo -n '' > $ignore_log
+	find /home/${user_}/$1/ -type f -name "*.tar.gz" -o -name "*.zip" >> $ignore_log
+	src_dir="/home/${user_}/$1"
+	dest_url="file:///backup/$srv_hostname/${user_}/$1"
+	log_archive="/var/log/$1/archive_bk.log"
+	last_log="/var/log/$1/last_bk.log"
+	error_log="/var/log/$1/error_bk.log"
+	duplicity --full-if-older-than=2W --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
+	bk_src=$?
+	[ ! -z $db ] && cp ${sql_dir}/${db}.sql.gz /backup/$srv_hostname/${user_}/$1 2>&1 >/dev/null
+	#[ ! -z $db ] && /usr/src/get_token && /usr/src/obj-upload-file -c sqlbackup/$srv_hostname/${user_}/${prov}/$dob -f ${sql_dir}/$db".sql.gz"
+	error=`grep Error $last_log | awk '{print $2}'`
+	passU=`cat /opt/migrate/departure/update_acc_passwd`
+	if [ $bk_src -eq 0 ] && [ $error -eq 0 ]; then
+		cat $last_log >> $log_archive
+		if [ ! -s $db_log ] && [ ! -z $db ]; then
+			id=`mysql -ubk_user -pbk_Passw0rd -e "select id from kusanagi.provision where provision_name='$1'" | tail -n +2`
+			#mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set backup_pro=$id where provision_name='$1'"
+		else
+			#mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set backup_pro=-1 where provision_name='$1'"
+			echo "mysqldump Failed"
+		fi
+	else
+   		cat $last_log >> $error_log
+		duplicity cleanup $dest_url --force >> $error_log
+		[ ! -s $db_log ] && echo "mysqldump OK" || echo "mysqldump Failed"
+		#mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set backup_pro=-1 where provision_name='$1'"
+	fi
+}
+
+get_latest_backup()
+{
+	if  [ -d "/home/$user_/$1" ]; then
+		latest_bk=`/usr/src/collection-status -u $user_ -d $1 | tail -n 1 | sed 's/\//\\\\\//g'`
+		latest_bk_1=`/usr/src/collection-status -u $user_ -d $1 | tail -n 1`
+	fi
+	echo "file:///backup/"$srv_hostname"/"$user_"/"$1","$latest_bk_1 > $log
+}
+
+main()
+{
+	source /opt/migrate/departure/rsync2
+	check_ssh_con $dest_
+	while read prov; do
+		echo "debug---"$prov
+		backup_procedure $prov
+		get_latest_backup $prov
+		#rsync_procedure $prov $dest_
+	done < <(mysql -ubk_user -pbk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" | tail -n +2)
+	#curl -d "zKey=6fa667992328972f1c6ded6540258ec5&login_id=$user_" http://move.vinaten.vn/api/Queues/restoreAll
+}
+
+main

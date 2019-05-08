@@ -1,0 +1,12 @@
+#!/bin/bash
+acme_acc=`ls /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/`
+update_acme_acct()
+{
+	cp /etc/letsencrypt/renewal/${1}.conf /opt/maintenance/lets_tools/renewal.bk/
+	old_acme=`grep account /etc/letsencrypt/renewal/${1}.conf | awk '{print $3}'`
+	if [ -z $old_acme ] || [ -z $acme_acc ]  ; then
+		echo "Can not update ACME acct. Pls check $1 renewal configuration file"
+	else
+		sed -i -e 's/'$old_acme'/'$acme_acc'/' /etc/letsencrypt/renewal/${1}.conf
+	fi
+}

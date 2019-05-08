@@ -1,0 +1,28 @@
+#!/bin/bash
+
+usage ()
+{
+	echo $0 -u user_name
+	exit 1
+}
+
+while getopts u: OPT
+    do
+          case $OPT in
+          "u" ) user_="$OPTARG" ;;
+          "*" ) usage ;;
+          esac
+    done
+
+if [ -z $user_ ]; then
+      usage
+fi
+
+source /opt/migrate/check_unknown_provision
+if [ 1 -eq $(check_missing) ]; then
+	echo "Profile missing ! Run /opt/maintenance/pro5_tools/update_pro5_user to update"
+	exit 1
+else
+	echo "OK"
+	exit 0
+fi

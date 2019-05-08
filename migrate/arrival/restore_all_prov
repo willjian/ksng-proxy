@@ -1,0 +1,107 @@
+#!/bin/bash
+# restore all provisions
+func_usage()
+{
+  echo " Usage: $0 -u user "
+  exit 1
+}
+while getopts u:p:d:t: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		* ) func_usage ;;
+		esac
+	done
+if [ -z ${user_} ] ; then
+    func_usage
+fi
+
+w3-date ()
+{
+declare -A arrayDate
+arrayDate=( ["Jan"]=01 ["Feb"]=02 ["Mar"]=03 ["Apr"]=04 ["May"]=05 ["Jun"]=06 ["Jul"]=07 ["Aug"]=08 ["Sep"]=09 ["Oct"]=10 ["Nov"]=11 ["Dec"]=12 )
+time_in_day=`echo $1 |cut -d '-' -f2`
+mon=`echo $1 |cut -d '-' -f1| cut -d '/' -f2`
+mon=${arrayDate[$mon]}
+year=`echo $1 |cut -d '-' -f1| cut -d '/' -f1`
+day=`echo $1 |cut -d '-' -f1| cut -d '/' -f3`
+[ $day -lt 10 ] && day="0"$day
+echo $year"-"$mon"-"$day"T"$time_in_day"+07:00"
+}
+
+passwd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+passU=`cat /opt/migrate/departure/update_acc_passwd`
+source /opt/migrate/departure/rsync2
+source /opt/migrate/arrival/update_acme_acct_to_renewal_conf
+
+check_backup_file()
+{
+backup_list="/opt/migrate/arrival/backup_path_${1}.log"
+if [ -f $backup_list ]; then
+	dest_url=`cat $backup_list | cut -d ',' -f1`
+	time_=`cat $backup_list | cut -d ',' -f2`
+else
+	echo "Missing $backup_list file" >> /var/log/$1/rest.log
+	exit 1
+fi
+}
+
+restore_procedure()
+{
+today=`date +%Y-%m-%d-%H:%M:%S`
+src_dir="/home/${user_}/${1}"
+log_archive="/var/log/${1}/rest.log"
+check_backup_file $1
+w3date=$(w3-date ${time_})
+echo $today >> $log_archive
+duplicity --time=${w3date} --no-encryption $dest_url $src_dir --force >> $log_archive
+ret=$?
+if [ $ret -eq 0 ]; then
+	db=`grep "/${1}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
+	sql_dir="/home/${user_}/${1}/sqlbackup"
+	if [ -f $sql_dir/${db}.sql.gz ]; then
+		mysql  -p$passwd -e "drop database if exists $db"
+		mysql  -p$passwd -e "create database $db"
+		gunzip < ${sql_dir}/${db}.sql.gz | mysql  -p$passwd $db
+		val=$?
+		queue_id=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select id from kusanagi_move.queue_users where login_id='$user_' and status=0 and flg_run=1" | tail -n +2`
+		cre=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select create_pro from kusanagi_move.queue_provisions where provision_name='$1' and queue_user_id=$queue_id" | tail -n +2`
+		if [ 0 -eq $val ]; then
+		  proxy_id=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select proxy_id from kusanagi_move.queue_provisions where provision_name='$1' and queue_user_id=$queue_id" | tail -n +2`
+		  /usr/src/proxy_swing -d $1 -p $proxy_id
+		  if [ ! -z $cre ]; then
+			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set restore_pro=$cre where provision_name='$1' and queue_user_id=$queue_id"
+			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set status=1 where provision_name='$1' and queue_user_id=$queue_id"
+		  else
+			echo "record $1 does not exist" >> $log_archive
+		  fi
+		fi
+	else
+		echo $db".sql.gz does NOT exist" >> $log_archive
+	fi
+else
+	echo "Restoration failed ! Contact your provider for help!" >> $log_archive
+fi
+}
+
+check_nginx_valid()
+{
+    nginx -t > /dev/null 2>&1;echo $?
+}
+
+main()
+{
+	mysql -ubk_user -pbk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" | tail -n +2 |\
+	while read prov; do
+		restore_procedure $prov
+		if [ 1 -eq $(check_lets_existed $prov) ]; then
+			update_acme_acct $prov
+		fi
+	done
+	if [ 0 -eq $(check_nginx_valid) ]; then
+		systemctl reload nginx && systemctl enable nginx
+	else
+		echo "Nginx error. Please check"
+	fi
+}
+main

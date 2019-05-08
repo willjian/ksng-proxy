@@ -1,0 +1,52 @@
+#!/bin/bash
+
+usage ()
+{
+	echo $0 -u user_name
+	exit 1
+}
+
+while getopts u: OPT
+	do
+		case $OPT in
+			"u" ) user_="$OPTARG" ;;
+			"*" ) usage ;;
+		esac
+	done
+
+if [ -z $user_ ]; then
+	usage
+fi
+
+pro5_existed()
+{
+	grep "\[$1\]" /etc/kusanagi.d/profile.conf 2>&1 > /dev/null
+	echo $?
+}
+
+check_missing()
+{
+i=0
+while read prov_; do
+	if [ 1 -eq $(pro5_existed $prov_) ] && [ -d "/home/$user_/$prov_" ]; then
+		((++i))
+	fi
+done <<< $(mysql -ubk_user -pbk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" | tail -n +2)
+if [ 0 -eq $i ]; then
+	echo 0
+else
+	echo 1
+fi
+}
+
+main()
+{
+	if [ 1 -eq $(check_missing) ]; then
+		echo "Profile missing ! Run /opt/maintenance/pro5_tools/update_pro5_user to update"
+		exit 1
+	else
+		echo "OK"
+		exit 0
+	fi
+}
+#main

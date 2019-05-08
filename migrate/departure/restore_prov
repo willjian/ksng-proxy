@@ -1,0 +1,69 @@
+#!/bin/bash
+
+func_usage()
+{
+  echo " Usage: $0 -u user -p prov -d dest_url -t time"
+  exit 1
+}
+while getopts u:p:d:t: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		"p" ) prov_="$OPTARG" ;;
+		"d" ) dest_url="$OPTARG" ;;
+		"t" ) time_="$OPTARG" ;;
+		* ) func_usage ;;
+		esac
+	done
+if [ -z ${user_} ] || [ -z ${prov_} ] || [ -z ${dest_url} ] || [ -z ${time_} ] ; then
+    func_usage
+fi
+
+w3-date ()
+{
+declare -A arrayDate
+arrayDate=( ["Jan"]=01 ["Feb"]=02 ["Mar"]=03 ["Apr"]=04 ["May"]=05 ["Jun"]=06 ["Jul"]=07 ["Aug"]=08 ["Sep"]=09 ["Oct"]=10 ["Nov"]=11 ["Dec"]=12 )
+time_in_day=`echo $1 |cut -d '-' -f2`
+mon=`echo $1 |cut -d '-' -f1| cut -d '/' -f2`
+mon=${arrayDate[$mon]}
+year=`echo $1 |cut -d '-' -f1| cut -d '/' -f1`
+day=`echo $1 |cut -d '-' -f1| cut -d '/' -f3`
+[ $day -lt 10 ] && day="0"$day
+echo $year"-"$mon"-"$day"T"$time_in_day"+07:00"
+}
+
+#time_=`cat backup_list_${prov_}.log| cut -d ',' -f2`
+w3date=$(w3-date ${time_})
+passwd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+## restore source code
+src_dir="/home/${user_}/${prov_}/"
+#dest_url=`cat backup_list_${prov_}.log| cut -d ',' -f1`
+log_archive="/var/log/${prov_}/rest.log"
+today=`date +%Y-%m-%d-%H:%M:%S`
+restore_procedure()
+{
+echo $today >> $log_archive
+duplicity --time=${w3date} --no-encryption $dest_url $src_dir --force >> $log_archive
+ret=$?
+if [ $ret -eq 0 ]; then
+	## restore db
+	db=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
+	sql_dir="/home/${user_}/${prov_}/sqlbackup"
+	if [ -f $sql_dir/$db".sql.gz" ]; then
+		#echo "drop old $db database"
+		mysql  -p$passwd -e "drop database if exists $db"
+		echo $?
+		#echo "create new $db database and restore from backup"
+		mysql  -p$passwd -e "create database $db"
+		gunzip < $sql_dir/$db".sql.gz" | mysql  -p$passwd $db 
+		echo $?
+	else
+		echo $db".sql.gz does NOT exist"
+		echo 1
+	fi
+else
+	echo "Restoration failed ! Contact your provider for help!"
+	echo 1
+fi
+}
+restore_procedure

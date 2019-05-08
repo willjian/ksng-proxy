@@ -1,0 +1,12 @@
+1. chuan bi
+	run  check_profile_and_update de fix loi missing profile neu co
+2. chay cac script theo thu tu
+- 0.get_full_info_all_prov:
+	+ lay thong tin de tao tat ca provision tren server moi
+	+ latest backup info
+	+ server name
+- 1.backup_single_prov:
+	+ tao ban backup moi nhat
+	+ note ra backup_path de restore tren server moi
+	+ rsync cert, nginx config, proxy nginx conf sang server moi
+	+ rsync backup log file (backup path, backup time) sang server moi de restore

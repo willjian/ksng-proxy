@@ -1,0 +1,47 @@
+#!/bin/bash
+
+usage ()
+{
+	echo $0 -u user_name -p prov
+	exit 1
+}
+
+while getopts u:p: OPT
+	do
+		case $OPT in
+			"u" ) user_="$OPTARG" ;;
+			"p" ) prov="$OPTARG" ;;
+			"*" ) usage ;;
+		esac
+	done
+
+if [ -z $user_ ] || [ -z ${prov} ]; then
+	usage
+fi
+
+pro5_existed()
+{
+	grep "\[$1\]" /etc/kusanagi.d/profile.conf 2>&1 > /dev/null
+	echo $?
+}
+db_existed()
+{
+	valid=`mysql -ubk_user -pbk_Passw0rd -e "select db_name from kusanagi.provision where user_name = '$1' and provision_name = '$2'" | tail -n +2`
+	if [ ! -z $valid ]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+check_proc()
+{
+	#echo "db check: "$(db_existed $1 $2)
+	echo "profile check: "$(pro5_existed $2)
+
+	if [ 0 -eq $(pro5_existed $2) ] && [ -d "/home/$1/$2" ]; then
+		echo 0
+	else 
+		echo 1
+	fi
+}
+check_proc $user_ $prov

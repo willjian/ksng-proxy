@@ -1,0 +1,11 @@
+#!/bin/bash
+#hoatuoitranganh.vn.conf
+if [ 0 -eq  $(ls /etc/letsencrypt/renewal/${1}-*.conf >/dev/null 2>&1;echo $?) ]; then
+	echo "OK"
+	echo $(ls /etc/letsencrypt/renewal/${1}-*.conf)
+	cp /etc/letsencrypt/renewal/${1}-*.conf /opt
+fi
+if [ -f "/etc/letsencrypt/renewal/${1}.conf" ]; then
+	echo "$1.conf has existed"
+fi
+
