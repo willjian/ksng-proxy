@@ -36,12 +36,12 @@ get_fqdn_proc()
 proxy_prepare()
 {
 declare -A arrayIP
-arrayIP=( ["f-host001.tenten.cloud"]=150.95.16.123 ["f-host002.tenten.cloud"]=150.95.113.25 ["f-host003.tenten.cloud"]=150.95.16.123 ["failover001.tenten.cloud"]=150.95.16.120 ["failover002.tenten.cloud"]=150.95.16.121 ["failover003.tenten.cloud"]=150.95.16.45 ["failover004.tenten.cloud"]=150.95.16.19 ["failover005.tenten.cloud"]=150.95.16.21 ["failover006.tenten.cloud"]=150.95.16.26 ["failover007.tenten.cloud"]=150.95.16.53 ["failover008.tenten.cloud"]=150.95.116.67 ["failover009.tenten.cloud"]=150.95.116.75 )
+arrayIP=( ["f-host001.tenten.cloud"]=150.95.16.123 ["f-host002.tenten.cloud"]=150.95.113.25 ["f-host003.tenten.cloud"]=150.95.16.123 )
 remote_ip=${arrayIP[$2]}
 local srv=`hostname`
 local_ip=${arrayIP[$srv]}
-sed 's/'$local_ip'/'$remote_ip'/'g /home/proxy/${1}_http.conf > /opt/migrate/departure/${1}_http.conf
-sed 's/'$local_ip'/'$remote_ip'/'g /home/proxy/${1}_ssl.conf > /opt/migrate/departure/${1}_ssl.conf
+sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_http.conf > /opt/migrate/departure/${1}_http.conf
+sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_ssl.conf > /opt/migrate/departure/${1}_ssl.conf
 }
 rsync_procedure()
 {

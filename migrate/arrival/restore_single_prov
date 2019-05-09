@@ -65,6 +65,8 @@ if [ $ret -eq 0 ]; then
 		queue_id=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select id from kusanagi_move.queue_users where login_id='$1' and status=0 and flg_run=1" | tail -n +2`
 		cre=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select create_pro from kusanagi_move.queue_provisions where provision_name='$2' and queue_user_id=$queue_id" | tail -n +2`
 		if [ 0 -eq $val ]; then
+		  proxy_id=`mysql -u update_res -p$passU -h 163.44.192.106 -e "select proxy_id from kusanagi_move.queue_provisions where provision_name='$1' and queue_user_id=$queue_id" | tail -n +2`
+		  /usr/src/proxy_swing -d $1 -p $proxy_id
 		  if [ ! -z $cre ]; then
 			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set restore_pro=$cre where provision_name='$2' and queue_user_id=$queue_id"
 			mysql -u update_res -p$passU -h 163.44.192.106 -e "update kusanagi_move.queue_provisions set status=1 where provision_name='$2' and queue_user_id=$queue_id"
