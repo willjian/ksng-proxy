@@ -1,0 +1,35 @@
+#!/bin/bash
+
+verify_proc()
+{
+srv=`hostname`
+log=/opt/check_backup/verify_${1}.log
+echo `date` > $log
+mysql -ubk_user -pbk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$1' and deactive_flg=0" | tail -n +2 | \
+while read prov; do
+	if [ ! -d "/home/$1/$prov" ]; then
+		echo "Error :$1:$prov:does not exist" >> $log
+	else
+        duplicity  --no-encryption verify file:///backup/$srv/$1/$prov /home/$1/$prov > /dev/null 2>&1
+        ret=$?
+        if [ 0 -lt $ret ]; then
+            echo "Error :"$1":"$prov >> $log
+        else
+            echo "OK: "$prov >> $log
+        fi
+	fi
+done
+}
+
+
+main_proc()
+{
+rm -f /opt/check_backup/verify_*
+mysql -ubk_user -pbk_Passw0rd -e "select login_id from kusanagi.account" | tail -n +2 | \
+while read acc; do
+	verify_proc $acc
+done
+grep Error /opt/check_backup/verify_* | cut -d ':' -f 3- > /opt/maintenance/backup_tools/error_backup.txt
+}
+
+main_proc

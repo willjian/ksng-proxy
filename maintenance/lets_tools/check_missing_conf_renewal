@@ -1,0 +1,12 @@
+#!/bin/bash
+log=/opt/maintenance/lets_tools/lets_list.log
+/usr/local/certbot/certbot-auto certificates 2>&1 | tee > $log
+i=0
+echo "--UNEXPECTED ERROR CHECK---"
+grep 'Skipping' $log | cut -d '/' -f5 | awk '{print $1}' | rev | cut -c 6- | rev |\
+while read dom; do
+if [ ! -z $dom ]; then
+        echo $((++i))". "$dom
+		cp /etc/letsencrypt/renewal/${dom}.conf /opt/maintenance/lets_tools/invalid_renewal/
+fi
+done

@@ -1,0 +1,11 @@
+#!/bin/bash
+acme_acc=`ls /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/`
+echo "current acme account = "$acme_acc
+cd /etc/letsencrypt/renewal
+ls /etc/letsencrypt/renewal | \
+while read pp; do
+	echo "--"$pp;
+	cp /etc/letsencrypt/renewal/$pp /opt/maintenance/lets_tools/renewal.bk/
+	old_acme=`grep account $pp | awk '{print $3}'`
+	sed -i -e 's/'$old_acme'/'$acme_acc'/' /etc/letsencrypt/renewal/$pp
+done

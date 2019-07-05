@@ -1,0 +1,24 @@
+#!/bin/bash
+
+prov_exist ()
+{
+	_dir=`grep webroot_map $1 -A 1 | grep '=' | awk '{print $3}'`
+
+	if [ ! -z ${_dir} ]; then
+		if [ 0 -lt $(ls ${_dir} > /dev/null 2>&1;echo $?) ]; then
+			echo $1"---"${_dir}" invalid"
+			mv /etc/letsencrypt/renewal/$1 /opt/maintenance/lets_tools/no_dir_renewal/
+		fi
+	fi
+}
+
+main ()
+{
+	cd /etc/letsencrypt/renewal
+	ls /etc/letsencrypt/renewal | \
+	while read pp; do
+		prov_exist $pp
+	done
+
+}
+main

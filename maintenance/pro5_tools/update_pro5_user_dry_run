@@ -1,0 +1,73 @@
+#!/bin/bash
+
+function usage()
+{
+	echo " $0 -u user_name"
+	exit 1
+}
+
+while getopts u: OPT
+	do
+		case $OPT in
+		"u" ) user_="$OPTARG" ;;
+		"*" ) usage ;;
+		esac
+	done
+if [ -z ${user_} ]; then
+	usage
+fi
+
+profile_existed ()
+{
+	grep "\[$1\]" /etc/kusanagi.d/profile.conf 2>&1 > /dev/null
+	echo $?
+}
+inifile=/etc/kusanagi.d/profile.conf
+cp $inifile /opt/scripts/bak_profile_${user_}.conf
+tmpfile=/opt/scripts/tmp_profile_${user_}.conf
+cp $inifile $tmpfile
+today=`date +%Y%m%d`
+report=/opt/scripts/report_${user_}_${today}.log
+if [ -f "$report" ]; then
+	echo '' > $report
+fi
+log=/opt/scripts/pro5_${user_}.log
+pwrd=PasSw0rd
+
+update_proc()
+{
+mysql -ubk_user -pbk_Passw0rd \
+-e "select domain,provision_name,db_name,db_user,db_password,email from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" > $log
+sed -i 's/\s/,/g' $log
+cat $log | tail -n +2 | \
+while read line; do
+	prov=`echo $line | cut -d ',' -f2`
+	dom=`echo $line | cut -d ',' -f1`
+	db_name=`echo $line | cut -d ',' -f3`
+	db_user=`echo $line | cut -d ',' -f4`
+	db_pass=`echo $line | cut -d ',' -f5`
+	email=`echo $line | cut -d ',' -f6`
+	if [ -d "/home/$user_/$prov" ]; then
+		existed=$(profile_existed $prov)
+		if [ $existed -eq 0 ]	; then
+			echo $prov" has existed" >> $report
+		else
+			echo $prov" lost profile" >> $report
+			echo "[$prov]" >> $tmpfile
+			echo "PROFILE=\"$prov\"" >> $tmpfile
+			echo "KUSANAGI_TYPE=\"WordPress\"" >> $tmpfile
+			echo "KUSANAGI_FQDN=\"$dom\"" >> $tmpfile
+			echo "KUSANAGI_DIR=\"/home/$user_/$prov\"" >> $tmpfile
+			echo "KUSANAGI_DBNAME=\"$db_name\"" >> $tmpfile
+			echo "KUSANAGI_DBUSER=\"$db_user\"" >> $tmpfile
+			echo "KUSANAGI_DBPASS=\"$db_pass\"" >> $tmpfile
+			echo "WPLANG=\"en_US\"" >> $tmpfile
+			echo "OPT_WOO=\"\"" >> $tmpfile
+			echo "KUSANAGI_USER=\"$user_\"" >> $tmpfile
+		fi
+	fi
+done
+rm -f $log
+}
+update_proc
+#cp $tmpfile $inifile

@@ -1,0 +1,25 @@
+#!/bin/bash
+cat rm_list.log |\
+while read pp; do
+	echo "---"$pp
+	if [ ! -z $pp ]; then
+		if [ 0 -eq $(ls /etc/letsencrypt/renewal/$pp.conf > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/renewal/${pp}.conf /opt/maintenance/lets_tools/recycle_bin/
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/renewal/$pp-000* > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/renewal/${pp}-000*.conf /opt/maintenance/lets_tools/recycle_bin/
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/live/$pp > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/live/$pp /opt/maintenance/lets_tools/live.deleted/
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/live/$pp-000* > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/live/$pp-000* /opt/maintenance/lets_tools/live.deleted/
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/$pp > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/archive/$pp /opt/maintenance/lets_tools/archive.deleted/
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/$pp-000* > /dev/null 2>&1;echo $?) ]; then
+			mv /etc/letsencrypt/archive/$pp-000* /opt/maintenance/lets_tools/archive.deleted/
+		fi
+	fi
+done

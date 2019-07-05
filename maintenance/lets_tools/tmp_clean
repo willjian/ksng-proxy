@@ -1,0 +1,20 @@
+#!/bin/bash
+
+LOCAL_CERT="/etc/pki/tls/certs/localhost.crt"
+LOCAL_KEY="/etc/pki/tls/private/localhost.key"
+
+cat remove_list.log |\
+while read dom; do
+mv /etc/letsencrypt/renewal/${dom}.conf /opt/maintenance/lets_tools/recycle_bin/
+prov_=`cat /etc/kusanagi.d/profile.conf | grep 'KUSANAGI_FQDN="'${dom}'"' -B 2 | grep PROFILE | cut -d '"' -f 2`
+mv /etc/letsencrypt/archive/${dom} /opt/maintenance/lets_tools/archive.deleted/
+mv /etc/letsencrypt/live/${dom} /opt/maintenance/lets_tools/live.deleted/
+if [ ! -z ${prov_} ] && [  -f "/etc/nginx/conf.d/${prov_}_ssl.conf" ]; then
+        echo $prov_
+		echo "update file /etc/nginx/conf.d/${prov_}_ssl.conf"
+		sed -i "s|^\(\s*ssl_certificate\s\+\)\S\+;|\\1${LOCAL_CERT};|" /etc/nginx/conf.d/${prov_}_ssl.conf
+		sed -i "s|^\(\s*ssl_certificate_key\s\+\)\S\+;|\\1${LOCAL_KEY};|" /etc/nginx/conf.d/${prov_}_ssl.conf
+		sed -i "s|^\(\s*ssl_certificate\s\+\)\S\+;|\\1${LOCAL_CERT};|" /etc/proxy/${prov_}_ssl.conf
+		sed -i "s|^\(\s*ssl_certificate_key\s\+\)\S\+;|\\1${LOCAL_KEY};|" /etc/proxy/${prov_}_ssl.conf
+fi
+done

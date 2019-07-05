@@ -1,0 +1,58 @@
+#!/bin/bash
+
+usage()
+{
+	echo $0 -u user -p provision_name
+	exit 1
+}
+
+while getopts u:p: OPT
+	do
+		case $OPT in
+			"u" ) user_="$OPTARG" ;;
+			"p" ) prov_="$OPTARG" ;;
+			"*" ) usage ;;
+		esac
+	done
+
+if [ -z $user_ ] || [ -z $prov_ ]; then
+	usage
+fi
+
+
+fix_backup()
+{
+srv_hostname=`hostname`
+dest_url="file:///backup/$srv_hostname/$1/$2"
+src_dir="/home/$1/$2"
+log="/backup/$srv_hostname/$1/$2/verify_$2.log"
+cd /backup/$srv_hostname/$1/$2
+
+while [ 0 -lt $(duplicity --no-encryption verify $dest_url $src_dir > /dev/null 2>&1; echo $?) ]
+do
+	duplicity --no-encryption verify $dest_url $src_dir 2>&1 | tee > $log
+	manifest=`grep AssertionError $log | cut -d "'" -f4`
+	if [ ! -z $manifest ]; then
+		echo "---"$manifest
+		rm -f $manifest
+		duplicity --no-encryption cleanup $dest_url --force
+		sigtar=`duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee | grep 'duplicity' | awk '{print $2}'`
+		echo "---"$sigtar
+		[ -n $sigtar ] && rm -f $sigtar
+		duplicity --no-encryption cleanup $dest_url --force
+	else
+		echo " No manifest error"
+		sigtar=`grep sigtar.gz $log | awk '{print $2}'`
+		echo "---"$sigtar
+		if [ -z $sigtar ]; then
+			echo " Please check backup $1 $2 again"
+			break
+		fi
+		[ -n $sigtar ] && rm -f $sigtar
+		[ -n $sigtar ] && duplicity --no-encryption cleanup $dest_url --force
+	fi
+done
+/usr/src/backup -u $1 -d $2
+/usr/src/cleanup-bk -u $1 -d $2
+}
+fix_backup $user_ $prov_

@@ -1,0 +1,95 @@
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Found the following certs:
+  Certificate Name: banggiatoyotatiengiang.net
+    Domains: banggiatoyotatiengiang.net www.banggiatoyotatiengiang.net
+    Expiry Date: 2019-05-15 06:36:53+00:00 (VALID: 37 days)
+    Certificate Path: /etc/letsencrypt/live/banggiatoyotatiengiang.net/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/banggiatoyotatiengiang.net/privkey.pem
+  Certificate Name: camera.smatt-bku.com
+    Domains: camera.smatt-bku.com
+    Expiry Date: 2019-06-14 16:28:08+00:00 (VALID: 67 days)
+    Certificate Path: /etc/letsencrypt/live/camera.smatt-bku.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/camera.smatt-bku.com/privkey.pem
+  Certificate Name: cameragiarecreta.com
+    Domains: cameragiarecreta.com www.cameragiarecreta.com
+    Expiry Date: 2019-06-02 15:38:12+00:00 (VALID: 55 days)
+    Certificate Path: /etc/letsencrypt/live/cameragiarecreta.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/cameragiarecreta.com/privkey.pem
+  Certificate Name: cretatech.com
+    Domains: cretatech.com www.cretatech.com
+    Expiry Date: 2019-05-26 04:11:08+00:00 (VALID: 48 days)
+    Certificate Path: /etc/letsencrypt/live/cretatech.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/cretatech.com/privkey.pem
+  Certificate Name: daiphuquygroup.com
+    Domains: daiphuquygroup.com www.daiphuquygroup.com
+    Expiry Date: 2019-06-11 19:13:34+00:00 (VALID: 65 days)
+    Certificate Path: /etc/letsencrypt/live/daiphuquygroup.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/daiphuquygroup.com/privkey.pem
+  Certificate Name: em20shop.com
+    Domains: em20shop.com www.em20shop.com
+    Expiry Date: 2019-06-23 01:52:44+00:00 (VALID: 76 days)
+    Certificate Path: /etc/letsencrypt/live/em20shop.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/em20shop.com/privkey.pem
+  Certificate Name: hanvicochinhhang.com
+    Domains: hanvicochinhhang.com www.hanvicochinhhang.com
+    Expiry Date: 2019-06-22 02:14:10+00:00 (VALID: 75 days)
+    Certificate Path: /etc/letsencrypt/live/hanvicochinhhang.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/hanvicochinhhang.com/privkey.pem
+  Certificate Name: lapdatcameracreta.com-0001
+    Domains: lapdatcameracreta.com
+    Expiry Date: 2019-06-02 15:38:53+00:00 (VALID: 55 days)
+    Certificate Path: /etc/letsencrypt/live/lapdatcameracreta.com-0001/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/lapdatcameracreta.com-0001/privkey.pem
+  Certificate Name: lapdatcameracreta.com
+    Domains: lapdatcameracreta.com www.lapdatcameracreta.com
+    Expiry Date: 2019-06-02 15:31:14+00:00 (VALID: 55 days)
+    Certificate Path: /etc/letsencrypt/live/lapdatcameracreta.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/lapdatcameracreta.com/privkey.pem
+  Certificate Name: minh.smatt-bku.com
+    Domains: minh.smatt-bku.com
+    Expiry Date: 2019-06-27 02:17:51+00:00 (VALID: 80 days)
+    Certificate Path: /etc/letsencrypt/live/minh.smatt-bku.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/minh.smatt-bku.com/privkey.pem
+  Certificate Name: ptess.vn
+    Domains: ptess.vn www.ptess.vn
+    Expiry Date: 2019-06-23 06:46:37+00:00 (VALID: 76 days)
+    Certificate Path: /etc/letsencrypt/live/ptess.vn/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/ptess.vn/privkey.pem
+  Certificate Name: smatt-bku.com
+    Domains: smatt-bku.com www.smatt-bku.com
+    Expiry Date: 2019-06-17 23:51:28+00:00 (VALID: 71 days)
+    Certificate Path: /etc/letsencrypt/live/smatt-bku.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/smatt-bku.com/privkey.pem
+  Certificate Name: toyotaaltistiengiang.info
+    Domains: toyotaaltistiengiang.info www.toyotaaltistiengiang.info
+    Expiry Date: 2019-05-16 01:04:26+00:00 (VALID: 38 days)
+    Certificate Path: /etc/letsencrypt/live/toyotaaltistiengiang.info/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/toyotaaltistiengiang.info/privkey.pem
+  Certificate Name: toyotainnovatiengiang.org
+    Domains: toyotainnovatiengiang.org www.toyotainnovatiengiang.org
+    Expiry Date: 2019-05-19 05:03:04+00:00 (VALID: 41 days)
+    Certificate Path: /etc/letsencrypt/live/toyotainnovatiengiang.org/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/toyotainnovatiengiang.org/privkey.pem
+  Certificate Name: toyotaviostiengiang.com
+    Domains: toyotaviostiengiang.com www.toyotaviostiengiang.com
+    Expiry Date: 2019-05-19 00:47:29+00:00 (VALID: 41 days)
+    Certificate Path: /etc/letsencrypt/live/toyotaviostiengiang.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/toyotaviostiengiang.com/privkey.pem
+  Certificate Name: toyotawigotiengiang.info
+    Domains: toyotawigotiengiang.info www.toyotawigotiengiang.info
+    Expiry Date: 2019-05-17 08:18:25+00:00 (VALID: 39 days)
+    Certificate Path: /etc/letsencrypt/live/toyotawigotiengiang.info/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/toyotawigotiengiang.info/privkey.pem
+  Certificate Name: toyotayaristiengiang.com
+    Domains: toyotayaristiengiang.com www.toyotayaristiengiang.com
+    Expiry Date: 2019-05-15 02:29:46+00:00 (VALID: 37 days)
+    Certificate Path: /etc/letsencrypt/live/toyotayaristiengiang.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/toyotayaristiengiang.com/privkey.pem
+  Certificate Name: vanthanhmienbac.com
+    Domains: vanthanhmienbac.com www.vanthanhmienbac.com
+    Expiry Date: 2019-06-27 04:09:00+00:00 (VALID: 80 days)
+    Certificate Path: /etc/letsencrypt/live/vanthanhmienbac.com/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/vanthanhmienbac.com/privkey.pem
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
