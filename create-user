@@ -19,12 +19,12 @@ while getopts u:p: OPT
 if [ -z ${AMAN} ] || [ -z ${PLAN} ]; then
 	usage
 fi
-dquota[1]=2048
-dquota[2]=5120
-dquota[3]=20480
-iquota[1]=100000
-iquota[2]=100000
-iquota[3]=250000
+dquota[1]=7168
+dquota[2]=20480
+dquota[3]=35480
+iquota[1]=200000
+iquota[2]=350000
+iquota[3]=500000
 pkg[1]='Start'
 pkg[2]='Business'
 pkg[3]='Professional'
@@ -43,8 +43,9 @@ else
 	chmod 701 $AMAN
 
 	# create a password
-	PASSWORD=`openssl rand -base64 12`
-	echo "$AMAN:$PASSWORD" >> /tmp/userpass_list.log
+	#PASSWORD=`openssl rand -base64 12`
+	PASSWORD=`head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12`
+	echo "$AMAN:$PASSWORD" >> /root/.hungpham/userpass_list.log
 	echo -e "$PASSWORD\n$PASSWORD\n" | passwd $AMAN
 
 	# create php7-fpm/hhvm configuration 
@@ -78,11 +79,11 @@ else
 	echo "$AMAN" $?
 	echo -e "/usr/src/clean_Filerundb -u $AMAN" >> /usr/src/clean-Filerun
 	# set disk quota
-	xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /
-	xfs_quota -x -c 'limit -g bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /
+	xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
+	xfs_quota -x -c 'limit -g bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
 	# set inode quota
-	xfs_quota -x -c 'limit isoft='$isoft' ihard='$ihard' '$AMAN'' /
-	xfs_quota -x -c 'limit -g isoft='$isoft' ihard='$ihard' '$AMAN'' /
+	xfs_quota -x -c 'limit isoft='$isoft' ihard='$ihard' '$AMAN'' /home
+	xfs_quota -x -c 'limit -g isoft='$isoft' ihard='$ihard' '$AMAN'' /home
 	# apply to lve limit
 	uid=`id -u $AMAN`
 	echo $uid ${pkg[$PLAN]} >> /var/superpanel/user_package
