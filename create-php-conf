@@ -31,8 +31,10 @@ sed -e 's/%%DOMAIN%%/'$PROV'/' /usr/lib/systemd/system/php-fpm.service.template 
 
 ## Start service
 systemctl daemon-reload
-systemctl start php-fpm.$PROV.service
-systemctl enable php-fpm.$PROV.service
+if [ 0 -eq $(systemctl is-active hhvm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
+	systemctl start php-fpm.$PROV.service
+	systemctl enable php-fpm.$PROV.service
+fi
 
 
 
