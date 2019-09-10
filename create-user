@@ -8,6 +8,13 @@ function usage()
    echo " Usage $0 -u user -p plan_number"
    exit 1
 }
+create_log_dir()
+{
+	mkdir /var/log/$AMAN/$1-fpm
+	mkdir /var/log/$AMAN/$1-fpm/session
+    mkdir /var/log/$AMAN/$1-fpm/wsdlcache
+}
+
 while getopts u:p: OPT
 	do
 		case $OPT in
@@ -19,12 +26,12 @@ while getopts u:p: OPT
 if [ -z ${AMAN} ] || [ -z ${PLAN} ]; then
 	usage
 fi
-dquota[1]=7168
-dquota[2]=20480
-dquota[3]=35480
-iquota[1]=200000
-iquota[2]=350000
-iquota[3]=500000
+dquota[1]=2048
+dquota[2]=5120
+dquota[3]=20480
+iquota[1]=100000
+iquota[2]=100000
+iquota[3]=250000
 pkg[1]='Start'
 pkg[2]='Business'
 pkg[3]='Professional'
@@ -49,14 +56,13 @@ else
 	echo -e "$PASSWORD\n$PASSWORD\n" | passwd $AMAN
 
 	# create php7-fpm/hhvm configuration 
-	mkdir -p /var/log/$AMAN/php7-fpm
-	mkdir -p /var/log/$AMAN/php7-fpm/session
-	mkdir -p /var/log/$AMAN/php7-fpm/wsdlcache
-	mkdir -p /var/log/$AMAN/nginx
-	mkdir -p /var/log/$AMAN/hhvmd
+	mkdir /var/log/$AMAN
+	create_log_dir php
+	create_log_dir php7
+	mkdir /var/log/$AMAN/nginx
 	chown -R $AMAN:$AMAN /var/log/${AMAN}
     /usr/src/create-php7-conf -d $AMAN -u $AMAN
-	#/usr/src/create-hhvm-ini -d $AMAN -u $AMAN
+	/usr/src/create-php-conf -d $AMAN -u $AMAN
 	# create FileManager
 	mkdir -p /home/$AMAN/.FileManager
 	unzip -qq -d /home/$AMAN/.FileManager /usr/src/cPanel/FileManager_source/Webmaster_Filerun_sample.zip
@@ -96,5 +102,6 @@ else
 	cp -f /usr/src/cPanel/hosts /etc/cagefs/custom.etc/$AMAN/hosts
 	chown -R $AMAN:$AMAN /etc/cagefs/custom.etc/$AMAN/
 	cagefsctl --update-etc $AMAN
+	echo " /usr/local/maldetect/maldet --scan-all /home/$AMAN" >> /usr/src/maldet_user
 	exit 0
 fi

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+function usage()
+{
+   echo " Usage $0 -u user"
+   exit 1
+}
+create_log_dir()
+{
+	mkdir /var/log/$AMAN/$1-fpm
+	mkdir /var/log/$AMAN/$1-fpm/session
+    mkdir /var/log/$AMAN/$1-fpm/wsdlcache
+}
+
+while getopts u: OPT
+	do
+		case $OPT in
+		 "u" ) AMAN="$OPTARG" ;;
+		 #"p" ) PLAN="$OPTARG" ;;
+		 "*" ) usage ;;
+		esac
+	done
+if [ -z ${AMAN} ]; then
+	usage
+fi
+
+# create php7-fpm/hhvm configuration 
+create_log_dir php
+chown -R $AMAN:$AMAN /var/log/${AMAN}
+/usr/src/create-php-conf -d $AMAN -u $AMAN
+if [ -f "/etc/systemd/system/hhvm.$AMAN.service" ]; then
+	systemctl stop hhvm.$AMAN
+	systemctl disable hhvm.$AMAN
+	mv /etc/systemd/system/hhvm.$AMAN.service /opt/archive_hhvm
+fi
