@@ -1,0 +1,23 @@
+#!/bin/bash
+function usage()
+{
+	echo " Restart all php7-fpm & hhvm "
+	echo " Usage $0 -u user "
+	exit 1
+}
+while getopts u: OPT
+	do
+		case $OPT in
+		  "u" ) USERNAME="$OPTARG" ;;
+		  "*" ) usage ;;
+		esac
+	done
+if [ -z ${USERNAME} ]; then
+	usage
+fi
+if [ 0 -eq $(systemctl is-active php7-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
+	systemctl restart php7-fpm.$USERNAME
+fi
+if [ 0 -eq $(systemctl is-active php-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
+	systemctl restart php-fpm.$USERNAME
+fi
