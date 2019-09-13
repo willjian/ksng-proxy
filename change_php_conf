@@ -1,0 +1,51 @@
+#!/bin/bash
+
+backup_conf()
+{
+mkdir /opt/archive_php_conf
+mkdir /opt/archive_php_conf/php56
+mkdir /opt/archive_php_conf/php7
+cp /etc/php-fpm.d/conf.d/* /opt/archive_php_conf/php56
+cp /etc/php-fpm.d/www.* /opt/archive_php_conf/php56
+cp /etc/php7-fpm.d/conf.d/* /opt/archive_php_conf/php7
+cp /etc/php7-fpm.d/www.* /opt/archive_php_conf/php7
+}
+
+create_log_dir()
+{
+    mkdir /home/$1/log/$2-fpm
+	mkdir /home/$1/log/$2-fpm/session
+	mkdir /home/$1/log/$2-fpm/wsdlcache
+}
+replace_log()
+{
+	sed -i 's/\/var\/log\/'$1'\//\/home\/'$1'\/log\//' /etc/$2-fpm.d/www.$1.conf
+	sed -i 's/\/var\/log\/'$1'\//\/home\/'$1'\/log\//' /etc/$2-fpm.d/conf.d/$1.conf
+}
+user_existed()
+{
+	grep -w "$1" /etc/passwd 2>&1 > /dev/null;echo $?
+}
+main()
+{
+mysql -ubk_user -pbk_Passw0rd -e "select login_id from kusanagi.account \G" | grep login_id | awk '{print $2}' | \
+while read u; do
+ if [ ! -z $u ]; then
+  if [ 0 -eq $(user_existed $u) ]; then
+ 	echo $u
+    mkdir /home/$u/log
+	create_log_dir $u php
+	create_log_dir $u php7
+	chown -R $u.$u /home/$u/log
+	replace_log $u php
+	replace_log $u php7
+  fi
+ fi
+done
+find /etc/ -type f -name www.*.conf -o -name www.conf.template | xargs sed -i 's/curl_exec,//'
+/usr/src/select_active_account | xargs -I{} bash -c '/usr/src/restart_php_user -u {};'
+
+}
+
+backup_conf
+main
