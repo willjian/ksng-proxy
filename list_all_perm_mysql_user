@@ -4,5 +4,5 @@ mysql -p$pss -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FRO
 mysql -p$pss -e "SOURCE /tmp/show_grants.log" > /opt/list_perms.log
 #grep 'GRANT ALL PRIVILEGES ON \*.\*' /opt/list_perms.log > /opt/readme_mysql.log
 #grep 'GRANT ALL PRIVILEGES ON `kusanagi`.\*' >> /opt/readme_mysql.log
-grep 'GRANT ALL PRIVILEGES ON `kusanagi`.\*\|GRANT ALL PRIVILEGES ON \*.\*' /opt/list_perms.log
+grep 'GRANT ALL PRIVILEGES ON `kusanagi`.\*\|GRANT ALL PRIVILEGES ON \*.\*' /opt/list_perms.log > /opt/mysql_root.log
 mv /tmp/show_grants.log /opt/
