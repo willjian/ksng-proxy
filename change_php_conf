@@ -28,7 +28,8 @@ user_existed()
 }
 main()
 {
-mysql -ubk_user -pbk_Passw0rd -e "select login_id from kusanagi.account \G" | grep login_id | awk '{print $2}' | \
+bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+mysql -ubk_user -p$bk_Passw0rd -e "select login_id from kusanagi.account \G" | grep login_id | awk '{print $2}' | \
 while read u; do
  if [ ! -z $u ]; then
   if [ 0 -eq $(user_existed $u) ]; then

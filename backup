@@ -24,31 +24,34 @@ if [ ! -d "${sql_dir}" ] && [ -d "/home/${_USER}/${_DOMA}" ]; then
 	chown -R ${_USER}:${_USER} ${sql_dir}
 	chmod 777 ${sql_dir}
 fi
+srv_hostname=`hostname`
+dob=`date +%Y-%m-%d`
 ## backup database
-db=`grep ${_DOMA} /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
-valid=`mysql -ubk_user -pbk_Passw0rd -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db'" | tail -n1`
+bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+db=`grep "/${_DOMA}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
+valid=`mysql -ubk_user -p$bk_Passw0rd -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db'" | tail -n1`
 if [ ! -z $valid ]; then
-	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -pbk_Passw0rd --databases $db | gzip > ${sql_dir}/$db".sql.gz" \
-&& scp ${sql_dir}/$db".sql.gz" 150.95.104.72:/backup/ 2>&1 >/dev/null
-
+	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -p$bk_Passw0rd --databases $db | gzip > ${sql_dir}/$db".sql.gz"
 	## backup source code
 	ignore_log="/var/log/${_DOMA}/ignore_bk.log"
 	echo -n '' > $ignore_log
 	find /home/${_USER}/${_DOMA}/ -type f -name "*.tar.gz" -o -name "*.zip" >> $ignore_log
-	source /root/dup_swift
-	src_dir="/home/${_USER}/${_DOMA}/"
-	dest_url="swift://vod/backup/${_USER}/${_DOMA}"
+	src_dir="/home/${_USER}/${_DOMA}"
+	dest_url="file:///backup/$srv_hostname/${_USER}/${_DOMA}"
 	log_archive="/var/log/${_DOMA}/archive_bk.log"
 	last_log="/var/log/${_DOMA}/last_bk.log"
 	error_log="/var/log/${_DOMA}/error_bk.log"
-	#duplicity remove-older-than 27D $dest_url --force >> $log_archive
-	duplicity --full-if-older-than=4W --no-encryption --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
+	duplicity --full-if-older-than=2W --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
 	RETVAL=$?
+	[ ! -z $db ] && cp ${sql_dir}/$db".sql.gz" /backup/$srv_hostname/${_USER}/${_DOMA} 2>&1 >/dev/null
+	[ ! -z $db ] && /usr/src/get_token && /usr/src/obj-upload-file -c sqlbackup/$srv_hostname/${_USER}/${_DOMA}/$dob -f ${sql_dir}/$db".sql.gz"
 	error=`grep Error $last_log | awk '{print $2}'`
 	if [ $RETVAL -eq 0 ] && [ $error -eq 0 ]; then
     	echo 0
+		echo $dob >> $log_archive
 		cat $last_log >> $log_archive
 	else
+		echo $dob >> $error_log
     	cat $last_log >> $error_log
 		duplicity cleanup $dest_url --force >> $error_log
     	echo "Something error ! Please check $error_log"

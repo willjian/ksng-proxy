@@ -1,0 +1,16 @@
+#!/bin/bash
+Hostname=`hostname -f`
+bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+CHECK_PATH=`ls /backup/$Hostname/backup_mainsql > /dev/null; echo $?`
+if [ $CHECK_PATH -gt 0 ]; then
+mkdir -p /backup/$Hostname/backup_mainsql; echo $?
+fi
+CHECKPATH2=`ls /home/backup_mysql/backup_mainsql > /dev/null; echo $?`
+if [ $CHECKPATH2 -gt 0 ]; then
+mkdir -p /home/backup_mysql/backup_mainsql; echo $?
+fi
+time=`date +%A%H`
+mysqldump --single-transaction  -ubk_user -p$bk_Passw0rd -h localhost mysql | gzip > /home/backup_mysql/backup_mainsql/"$time"_mysql.sql.gz 
+cp -f /home/backup_mysql/backup_mainsql/"$time"_mysql.sql.gz /backup/$Hostname/backup_mainsql/"$time"_mysql.sql.gz
+mysqldump --single-transaction -ubk_user -p$bk_Passw0rd -h localhost kusanagi | gzip > /home/backup_mysql/backup_mainsql/"$time"_kusanagi.sql.gz
+cp -f /home/backup_mysql/backup_mainsql/"$time"_kusanagi.sql.gz /backup/$Hostname/backup_mainsql/"$time"_kusanagi.sql.gz

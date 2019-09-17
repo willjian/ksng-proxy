@@ -1,0 +1,7 @@
+#!/bin/bash
+file=/usr/src/.bk_user_dwp
+dbr=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+np=`head /dev/urandom | tr -dc A-Za-z0-9 | head -c 15`
+echo -n $np > $file
+mysql -p$dbr -e "set password for 'bk_user'@'%' = password('$np')"
+mysql -p$dbr -e "flush privileges"
