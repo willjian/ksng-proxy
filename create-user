@@ -57,6 +57,7 @@ else
 
 	# create php7-fpm/hhvm configuration 
 	#mkdir /var/log/$AMAN
+	mkdir /home/${AMAN}/log
 	create_log_dir php
 	create_log_dir php7
 	#mkdir /var/log/$AMAN/nginx
