@@ -23,7 +23,7 @@ pid = /run/php-fpm/php-fpm.%%DOMAIN%%.pid
 ; Note: the default prefix is /root/php7/usr/var
 ; Default Value: log/php-fpm.log
 ;error_log = log/php-fpm.log
-error_log = /var/log/%%DOMAIN%%/php-fpm/error.log
+error_log = /home/%%DOMAIN%%/log/php-fpm/error.log
 
 ; syslog_facility is used to specify what type of program is logging the
 ; message. This lets syslogd specify that messages from different facilities

@@ -329,7 +329,7 @@ pm.max_requests = 500
 ; Default Value: not set
 ; Note: slowlog is mandatory if request_slowlog_timeout is set
 ;slowlog = log/$pool.log.slow
-slowlog = /var/log/%%DOMAIN%%/php-fpm/www-slow.log
+slowlog = /home/%%DOMAIN%%/log/php-fpm/www-slow.log
 
 ; The timeout for serving a single request after which a PHP backtrace will be
 ; dumped to the 'slowlog' file. A value of '0s' means 'off'.
@@ -429,11 +429,12 @@ request_terminate_timeout = 90
 ;php_admin_flag[log_errors] = on
 ;php_admin_value[memory_limit] = 32M
 
-php_admin_value[error_log] = /var/log/%%DOMAIN%%/php-fpm/www-error.log
+php_admin_value[error_log] = /home/%%DOMAIN%%/log/php-fpm/www-error.log
 php_admin_flag[log_errors] = on
 php_value[session.save_handler] = files
 ;php_value[session.save_path]    = /var/lib/php7/session
-php_value[session.save_path]    = /var/log/%%DOMAIN%%/php-fpm/session
+php_value[session.save_path]    = /home/%%DOMAIN%%/log/php-fpm/session
 ;php_value[soap.wsdl_cache_dir]  = /var/lib/php7/wsdlcache
-php_value[soap.wsdl_cache_dir]  = /var/log/%%DOMAIN%%/php-fpm/wsdlcache
-php_admin_value[disable_functions] = exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source
+php_value[soap.wsdl_cache_dir]  = /home/%%DOMAIN%%/log/php-fpm/wsdlcache
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system,proc_open,popen,curl_multi_exec,parse_ini_file,show_source
+php_admin_value[open_basedir] =/home/%%DOMAIN%%:var/log/%%DOMAIN%%:/tmp
