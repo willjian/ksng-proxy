@@ -1,6 +1,6 @@
 #!/bin/bash
 pss=`cat /usr/src/.lifesafty_cPanel | head -c 24`
-mysql -p$pss -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user INTO OUTFILE "/tmp/show_grants.log""
+mysql -p$pss -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user INTO OUTFILE '/tmp/show_grants.log'"
 mysql -p$pss -e "SOURCE /tmp/show_grants.log" > /opt/list_perms.log
 #grep 'GRANT ALL PRIVILEGES ON \*.\*' /opt/list_perms.log > /opt/readme_mysql.log
 #grep 'GRANT ALL PRIVILEGES ON `kusanagi`.\*' >> /opt/readme_mysql.log
