@@ -21,20 +21,15 @@ if [ -z ${PROV} ] || [ -z ${USERNAME} ]; then
 fi
 
 # create separate php53-fpm configuration for each vhost
-sed -e 's/%%DOMAIN%%/'$PROV'/' /etc/php-fpm.d/conf.d/php-fpm.conf.template > /etc/php-fpm.d/conf.d/$PROV.conf
+sed -e 's/%%DOMAIN%%/'$PROV'/g' /etc/php-fpm.d/conf.d/php-fpm.conf.template > /etc/php-fpm.d/conf.d/$PROV.conf
 
 # create separate pool configuration for each vhost
-sed -e 's/%%DOMAIN%%/'$PROV'/' -e 's/%%USER%%/'$USERNAME'/' /etc/php-fpm.d/www.conf.template > /etc/php-fpm.d/www.$PROV.conf
+sed -e 's/%%DOMAIN%%/'$PROV'/g' -e 's/%%USER%%/'$USERNAME'/g' /etc/php-fpm.d/www.conf.template > /etc/php-fpm.d/www.$PROV.conf
 
 # create new service
-sed -e 's/%%DOMAIN%%/'$PROV'/' /usr/lib/systemd/system/php-fpm.service.template > /usr/lib/systemd/system/php-fpm.$PROV.service
+sed -e 's/%%DOMAIN%%/'$PROV'/g' /usr/lib/systemd/system/php-fpm.service.template > /usr/lib/systemd/system/php-fpm.$PROV.service
 
 ## Start service
 systemctl daemon-reload
-if [ 0 -eq $(systemctl is-active hhvm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
-	systemctl start php-fpm.$PROV.service
-	systemctl enable php-fpm.$PROV.service
-fi
-
-
-
+#systemctl start php-fpm.$PROV.service
+#systemctl enable php-fpm.$PROV.service

@@ -21,17 +21,16 @@ if [ -z ${PROV} ] || [ -z ${USERNAME} ]; then
 fi
 
 # create separate php7-fpm configuration for each vhost
-sed -e 's/%%DOMAIN%%/'$PROV'/' /etc/php7-fpm.d/conf.d/php7-fpm.conf.template > /etc/php7-fpm.d/conf.d/$PROV.conf
+sed -e 's/%%DOMAIN%%/'$PROV'/g' /etc/php7-fpm.d/conf.d/php7-fpm.conf.template > /etc/php7-fpm.d/conf.d/$PROV.conf
 
 # create separate pool configuration for each vhost
-sed -e 's/%%DOMAIN%%/'$PROV'/' -e 's/%%USER%%/'$USERNAME'/' /etc/php7-fpm.d/www.conf.template > /etc/php7-fpm.d/www.$PROV.conf
+sed -e 's/%%DOMAIN%%/'$PROV'/g' -e 's/%%USER%%/'$USERNAME'/g' /etc/php7-fpm.d/www.conf.template > /etc/php7-fpm.d/www.$PROV.conf
 
 # create new service
-sed -e 's/%%DOMAIN%%/'$PROV'/' /usr/lib/systemd/system/php7-fpm.service.template > /usr/lib/systemd/system/php7-fpm.$PROV.service
+sed -e 's/%%DOMAIN%%/'$PROV'/g' /usr/lib/systemd/system/php7-fpm.service.template > /usr/lib/systemd/system/php7-fpm.$PROV.service
 
 ## Start service
 systemctl daemon-reload
 systemctl start php7-fpm.$PROV.service
 systemctl enable php7-fpm.$PROV.service
-
 
