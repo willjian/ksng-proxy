@@ -10,9 +10,9 @@ function usage()
 }
 create_log_dir()
 {
-	mkdir /var/log/$AMAN/$1-fpm
-	mkdir /var/log/$AMAN/$1-fpm/session
-    mkdir /var/log/$AMAN/$1-fpm/wsdlcache
+	mkdir /home/$AMAN/log/$1-fpm
+	mkdir /home/$AMAN/log/$1-fpm/session
+    mkdir /home/$AMAN/log/$1-fpm/wsdlcache
 }
 
 while getopts u:p: OPT
@@ -56,11 +56,11 @@ else
 	echo -e "$PASSWORD\n$PASSWORD\n" | passwd $AMAN
 
 	# create php7-fpm/hhvm configuration 
-	mkdir /var/log/$AMAN
+	#mkdir /var/log/$AMAN
 	create_log_dir php
 	create_log_dir php7
-	mkdir /var/log/$AMAN/nginx
-	chown -R $AMAN:$AMAN /var/log/${AMAN}
+	#mkdir /var/log/$AMAN/nginx
+	chown -R $AMAN:$AMAN /home/${AMAN}/log
     /usr/src/create-php7-conf -d $AMAN -u $AMAN
 	/usr/src/create-php-conf -d $AMAN -u $AMAN
 	# create FileManager
@@ -72,7 +72,9 @@ else
 	mv -f update.autoconfig.php autoconfig.php
 	sed -i "s|$Old_FileP|$FileP|g" /home/$AMAN/.FileManager/system/data/autoconfig.php
 	echo "$FileP" | cat > /home/$AMAN/.FileManager/system/data/lifeconfig
+	chmod 400 /home/$AMAN/.FileManager/system/data/lifeconfig
 	chown -R $AMAN:$AMAN /home/$AMAN/.FileManager/
+	sed -i "/kusanagilifesafe_user/a\    'deny Filerun_${AMAN}_user from all'," /usr/share/mysqlmanager/config.inc.php
 	mysql -p$GetP -e "DROP DATABASE IF EXISTS Filerun_"$AMAN"_db"
 	mysql -p$GetP -e "create database Filerun_"$AMAN"_db"
 	mysql -p$GetP -e "CREATE USER 'Filerun_"$AMAN"_user'@'%' IDENTIFIED WITH mysql_native_password;"
