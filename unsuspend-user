@@ -1,0 +1,41 @@
+#!/bin/bash
+function usage()
+{
+	echo " Remove user and all provision belong to it"
+	echo " Usage $0 -u user "
+	exit 1
+}
+while getopts u: OPT
+	do
+		case $OPT in
+		  "u" ) USERNAME="$OPTARG" ;;
+		  "*" ) usage ;;
+		esac
+	done
+if [ -z ${USERNAME} ]; then
+	usage
+fi
+config_check=`/usr/src/select_disable_account | grep ${USERNAME} > /dev/null; echo $?`
+if [ $config_check -gt 0 ]; then
+echo "the config suspend file do not exit"
+exit 0
+fi
+/usr/src/create-php7-conf -d ${USERNAME} -u ${USERNAME}
+systemctl start php7-fpm.$USERNAME
+systemctl enable php7-fpm.$USERNAME
+path=`ls /root/.tmp/unsuspend.log > /dev/null; echo $?`
+if [ $path -gt 0 ]; then
+    touch /root/.tmp/unsuspend.log
+	fi	
+PHP=`cat /root/.tmp/suspend.log | grep $USERNAME | cut -d "." -f1 `
+#echo "$PHP".$USERNAME >> /root/.tmp/unsuspend.log
+for i in $PHP
+do
+				echo "$i.$USERNAME" >> /root/.tmp/unsuspend.log
+				/usr/src/create-$i-conf -d ${USERNAME} -u ${USERNAME}
+				systemctl start $i-fpm.$USERNAME
+				systemctl enable $i-fpm.$USERNAME
+done
+GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+#Delete Filerun
+mysql -p$GetP -h localhost kusanagi -e "UPDATE account SET status = 1 WHERE login_id = '"$USERNAME"'"; echo $?
