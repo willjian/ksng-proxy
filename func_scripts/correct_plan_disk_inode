@@ -1,0 +1,45 @@
+#!/bin/bash
+
+function usage()
+{
+   echo " Usage $0 -u user -p plan_number"
+   exit 1
+}
+
+while getopts u:p: OPT
+	do
+		case $OPT in
+		 "u" ) AMAN="$OPTARG" ;;
+		 "p" ) PLAN="$OPTARG" ;;
+		 "*" ) usage ;;
+		esac
+	done
+if [ -z ${AMAN} ] || [ -z ${PLAN} ]; then
+	usage
+fi
+dquota[1]=7168
+dquota[2]=20480
+dquota[3]=35480
+iquota[1]=200000
+iquota[2]=300000
+iquota[3]=500000
+pkg[1]='Start'
+pkg[2]='Business'
+pkg[3]='Professional'
+bhard=${dquota[$PLAN]}
+let bsoft=bhard-100
+ihard=${iquota[$PLAN]}
+let isoft=ihard-10000
+
+if [ `grep $AMAN /etc/passwd >/dev/null;echo $?` -eq 1 ]; then
+   	echo " User does not exist"
+	exit 1
+else
+	# set disk quota
+	xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
+	xfs_quota -x -c 'limit -g bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
+	# set inode quota
+	xfs_quota -x -c 'limit isoft='$isoft' ihard='$ihard' '$AMAN'' /home
+	xfs_quota -x -c 'limit -g isoft='$isoft' ihard='$ihard' '$AMAN'' /home
+	exit 0
+fi
