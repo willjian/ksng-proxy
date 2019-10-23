@@ -50,5 +50,16 @@ find /etc/ -type f -name php7-fpm.conf.template -o -name php-fpm.conf.template |
 
 }
 
-backup_conf
-main
+restart_all_php()
+{
+	/usr/src/select_active_account | xargs -I{} bash -c '/usr/src/restart_php_user -u {};'
+}
+edit_php_conf()
+{
+	find /etc/ -type f -name www.*.conf -o -name www.conf.template | xargs sed -i '/^php_admin_value\[open_basedir\]/s/$/:\/var\/cache/'
+}
+
+#backup_conf
+#main
+edit_php_conf
+restart_all_php
