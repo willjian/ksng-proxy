@@ -46,8 +46,6 @@ done
 find /etc/ -type f -name www.*.conf -o -name www.conf.template | xargs sed -i 's/curl_exec,//'
 find /etc/ -type f -name www.conf.template | xargs sed -i 's/\/var\/log\/%%DOMAIN%%\//\/home\/%%DOMAIN%%\/log\//'
 find /etc/ -type f -name php7-fpm.conf.template -o -name php-fpm.conf.template | xargs sed -i 's/\/var\/log\/%%DOMAIN%%\//\/home\/%%DOMAIN%%\/log\//'
-/usr/src/select_active_account | xargs -I{} bash -c '/usr/src/restart_php_user -u {};'
-
 }
 
 restart_all_php()
