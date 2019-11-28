@@ -1,0 +1,72 @@
+#!/bin/bash
+usage ()
+{
+  echo " Update let's encrypt cert to proxies"
+  exit 1
+}
+
+check_cert_existed ()
+{
+	if [ -f "/etc/pki/tls/certs/${1}.crt" ]; then echo 1; else echo 0; fi
+}
+check_lets_existed ()
+{
+	if [ -d "/etc/letsencrypt/archive/${1}" ]; then
+		echo 1
+	else
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/${1}-* > /dev/null 2>&1;echo $?) ]; then
+			echo 1
+		else
+			echo 0
+		fi
+	fi
+}
+
+log=/var/log/update_lets_cert.log
+
+main_procedure()
+{
+    local i=0
+	source /usr/src/list_proxy_by_pairs
+    cat /etc/kusanagi.d/profile.conf | grep "KUSANAGI_FQDN" | cut -d '"' -f 2 |\
+    while read dom; do
+        #echo -n $((++i))". "$dom":: "
+		lets_exist=$(check_lets_existed ${dom})
+		dom_=`echo ${dom} | sed 's/\./\\\./'g`
+		prov_name=`cat /etc/kusanagi.d/profile.conf | grep 'KUSANAGI_FQDN="'${dom_}'"' -B 2 | grep PROFILE | cut -d '"' -f 2`
+		[ $lets_exist -eq 1 ] && update_specified_lets
+		#echo $lets_exist":: "$prov_name":: "$current_id":: "${proxy_pair[$j]}
+    done
+}
+
+update_specified_lets()
+{
+	## locate the current proxy address of the provision
+	pwrd="PasSw0rd"
+	current_id=`mysql -upr0xy -p$pwrd -e "select proxy_id from proxy.pair where provision_name = '$prov_name'" | tail -n 1`
+
+	## re-sync lets encrypt cert directories
+	if [ ! -z ${current_id} ]; then
+	 if [ $current_id -gt 0 ]; then
+		#source /usr/src/list_proxy_by_pairs
+		echo "===========================================================================" >> $log
+		echo `date`": Re-sync Lets certs of "$dom >> $log
+		let j=${current_id}-1
+		if [ -d "/etc/letsencrypt/archive/${dom}" ]; then
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${dom} root@proxy${current_id}:/etc/letsencrypt/live/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${dom} root@proxy${proxy_pair[$j]}:/etc/letsencrypt/live/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${dom} root@proxy${current_id}:/etc/letsencrypt/archive/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${dom} root@proxy${proxy_pair[$j]}:/etc/letsencrypt/archive/ 2>&1 >> $log
+		fi
+		if [ 0 -eq $(ls /etc/letsencrypt/archive/${dom}-* > /dev/null 2>&1;echo $?) ]; then
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${dom}"-"* root@proxy${current_id}:/etc/letsencrypt/archive/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/archive/${dom}"-"* root@proxy${proxy_pair[$j]}:/etc/letsencrypt/archive/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${dom}"-"* root@proxy${current_id}:/etc/letsencrypt/live/ 2>&1 >> $log
+			rsync -avzhe 'ssh -p1010' /etc/letsencrypt/live/${dom}"-"* root@proxy${proxy_pair[$j]}:/etc/letsencrypt/live/ 2>&1 >> $log
+		fi
+		#usage
+	 fi	
+	fi
+}
+
+main_procedure

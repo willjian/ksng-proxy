@@ -1,0 +1,42 @@
+#!/bin/bash
+usage ()
+{
+  echo " Update paid cert and nconf to proxies"
+  exit 1
+}
+
+check_cert_existed ()
+{
+	if [ -f "/etc/pki/tls/certs/${1}.crt" ]; then echo 1; else echo 0; fi
+}
+
+update_cert_nconf()
+{
+	## locate the current proxy address of the provision
+	pwrd="PasSw0rd"
+	fqdn_=`echo $1 | sed 's/\./\\\./'g`
+	prov_=`cat /etc/kusanagi.d/profile.conf | grep 'KUSANAGI_FQDN="'${fqdn_}'"' -B 2 | grep PROFILE | cut -d '"' -f 2`
+	current_id=`mysql -upr0xy -p$pwrd -e "select proxy_id from proxy.pair where provision_name = '$prov_'" | tail -n 1`
+	echo $current_id
+	
+	if [ ! -z ${current_id} ]; then
+	 if [ $current_id -gt 0 ]; then
+		source /usr/src/list_proxy_by_pairs
+		let j=${current_id}-1
+		echo ${proxy_pair[$j]}
+		if [ 1 -eq $(check_cert_existed $1) ]; then
+			rsync -avzhe 'ssh -p1010' /etc/pki/tls/certs/${1}* root@proxy${current_id}:/etc/pki/tls/certs/ > /dev/null 2>&1
+			rsync -avzhe 'ssh -p1010' /etc/pki/tls/certs/${1}* root@proxy${proxy_pair[$j]}:/etc/pki/tls/certs/ > /dev/null 2>&1
+			rsync -avzhe 'ssh -p1010' /etc/pki/tls/private/${1}* root@proxy${current_id}:/etc/pki/tls/private/ > /dev/null 2>&1
+			rsync -avzhe 'ssh -p1010' /etc/pki/tls/private/${1}* root@proxy${proxy_pair[$j]}:/etc/pki/tls/private/ > /dev/null 2>&1
+			rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_}_http.conf root@proxy${current_id}:/etc/nginx/conf.d/
+			rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_}_http.conf root@proxy${proxy_pair[$j]}:/etc/nginx/conf.d/
+			rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_}_ssl.conf root@proxy${current_id}:/etc/nginx/conf.d/
+			rsync -avzhe 'ssh -p1010' /etc/proxy/${prov_}_ssl.conf root@proxy${proxy_pair[$j]}:/etc/nginx/conf.d/
+		fi
+		#usage
+	 fi	
+	fi
+}
+
+update_cert_nconf $1

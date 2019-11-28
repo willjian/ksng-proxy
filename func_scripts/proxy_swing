@@ -18,7 +18,10 @@ while getopts d:p: OPT
 if [ -z ${proxy_id} ] || [ -z ${prov_name} ] || [ ${proxy_id} -eq 0 ]; then
   usage
 fi
+
+prov_name=`echo ${prov_name} | sed 's/\./\\\./'g`
 FQDN=`cat /etc/kusanagi.d/profile.conf | grep 'PROFILE="'$prov_name'"' -A 2 | grep "KUSANAGI_FQDN" | cut -d '"' -f2`
+
 check_cert_existed ()
 {
 	if [ -f "/etc/pki/tls/certs/${1}.crt" ]; then echo 1; else echo 0; fi

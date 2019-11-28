@@ -1,0 +1,30 @@
+#!/bin/bash
+usage ()
+{
+  echo " Update nginx conf to proxies"
+    exit 1
+}
+get_prov_name()
+{
+        grep "KUSANAGI_FQDN=\"$1\"" /etc/kusanagi.d/profile.conf -B 2 | grep PROFILE | cut -d '"' -f2
+}
+update_nginx_proc()
+{
+        ## locate the current proxy address of the provision
+        pwrd="PasSw0rd"
+        prov=$(get_prov_name $1)
+        current_id=`mysql -upr0xy -p$pwrd -e "select proxy_id from proxy.pair where provision_name = '$prov'" | tail -n 1`
+
+        source /usr/src/list_proxy_by_pairs
+        if [ ! -z ${current_id} ]; then
+             if [ $current_id -gt 0 ]; then
+                  echo "1st proxy: "${current_id}
+                  let j=${current_id}-1
+                  echo "2nd proxy: "${proxy_pair[$j]}
+                  rsync -avzhe 'ssh -p1010' /etc/proxy/${prov}_* root@proxy${current_id}:/etc/nginx/conf.d/
+                  rsync -avzhe 'ssh -p1010' /etc/proxy/${prov}_* root@proxy${proxy_pair[$j]}:/etc/nginx/conf.d/
+             fi
+        fi
+}
+domain=`echo ${1} | sed 's/\./\\\./'g`
+update_nginx_proc $domain
