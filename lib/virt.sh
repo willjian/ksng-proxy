@@ -29,7 +29,7 @@ for ITEM in ${PROXY_CONF[@]} ; do
 		sed -i -e "s/^\(\s*server_name\s\+.*\);/\1 ${ADDFQDN};/" $FILECONF
 	fi
 done
-## update value of proxy_id, which is selected by provision, to database proxy
+## update value of proxy_id, which is selected by provision, to proxy database
 ## by default, the first proxy is server hosting, proxy_id = 0
 	pwrd=`cat /root/.my.cnf | grep password | cut -d '"' -f2`
 	mysql -p$pwrd -e 'insert into proxy.pair (provision_name, proxy_id) values ("'$PROFILE'" , "0")' 
@@ -96,12 +96,13 @@ sed -i "s/^\(127.0.0.1.*\)\$/\1 $FQDN $ADDFQDN/" /etc/hosts || \
   cat /tmp/hosts.$$ > /etc/hosts && /usr/bin/rm /tmp/hosts.$$)
 ##
 if [ "$APP" != "Rails" ] && [ "$APP" != "WordPress" ]; then
-	if [ ! -f "/etc/systemd/system/hhvm.${CUSTOM_USER}.service" ]; then
-		/usr/src/create-hhvm-ini -d $CUSTOM_USER -u $CUSTOM_USER
-	elif [ `systemctl is-active hhvm.${CUSTOM_USER} | grep ^active 2>&1 >/dev/null;echo $?` -gt 0 ]; then 
-	    systemctl start hhvm.${CUSTOM_USER}
-		systemctl enable hhvm.${CUSTOM_USER}
-	fi
+#	if [ ! -f "/etc/systemd/system/hhvm.${CUSTOM_USER}.service" ]; then
+#		/usr/src/create-hhvm-ini -d $CUSTOM_USER -u $CUSTOM_USER
+#	elif [ `systemctl is-active hhvm.${CUSTOM_USER} | grep ^active 2>&1 >/dev/null;echo $?` -gt 0 ]; then 
+#	    systemctl start hhvm.${CUSTOM_USER}
+#		systemctl enable hhvm.${CUSTOM_USER}
+#	fi
+	echo ""
 fi
 ## K_Add backup command for this provision
 echo "/usr/src/backup -u $CUSTOM_USER -d $PROFILE" >> /etc/cron.daily/backup-prov
