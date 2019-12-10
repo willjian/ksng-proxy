@@ -17,10 +17,27 @@ if [ -z ${_user} ] || [ -z ${_doma} ]; then
 	usage
 fi
 
+get_token="/usr/src/get_token"
+get_detail="/usr/src/obj-get-cont-detail"
+del_obj="/usr/src/obj-del-obj"
 ## remove backup file older than 1 month
-source /root/dup_swift
-dest_url="swift://vod/backup/${_user}/${_doma}"
+srv_hostname=`hostname`
+dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
 log_archive="/var/log/${_doma}/archive_bk.log"
-duplicity remove-older-than 27D $dest_url --force >> $log_archive
+echo "Cleanup ${_user}: ${_doma}"
+duplicity remove-older-than 15D $dest_url --force >> $log_archive
 
+## remove sql tar file older than 1 month on swift
+#threshold=82000
+threshold=1555200
+today=`date +%Y-%m-%d`
+db=`grep "/${_doma}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
+$get_token
+$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | grep ${db}.sql.gz | cut -d '/' -f 4 | \
+while read dob; do
+	 m=$((`date +%s` - `date -d "$dob" +%s`))
+	 if [ $m -gt $threshold ]; then
+	     $del_obj -c sqlbackup -o $srv_hostname/${_user}/${_doma}/$dob/${db}.sql.gz
+	 fi
+done
 exit 0
