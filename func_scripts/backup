@@ -28,11 +28,17 @@ srv_hostname=`hostname`
 dob=`date +%Y-%m-%d`
 ## backup database
 bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+pwrd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+db_log="/var/log/${_DOMA}/db_backup_error_daily.log"
+echo -n '' > $db_log
 prov_=`echo ${_DOMA} | sed 's/\./\\\./'g`
 db=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
 valid=`mysql -ubk_user -p$bk_Passw0rd -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db'" | tail -n1`
 if [ ! -z $valid ]; then
-	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -p$bk_Passw0rd --databases $db | gzip > ${sql_dir}/$db".sql.gz"
+	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -p$bk_Passw0rd --databases $db 2> $db_log | gzip > ${sql_dir}/$db".sql.gz"
+	if [ -s $db_log ]; then
+		mysqldump --single-transaction -p$pwrd --databases $db | gzip > ${sql_dir}/$db".sql.gz"
+	fi
 	## backup source code
 	ignore_log="/var/log/${_DOMA}/ignore_bk.log"
 	echo -n '' > $ignore_log
