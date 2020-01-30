@@ -28,16 +28,15 @@ echo "Cleanup ${_user}: ${_doma}"
 duplicity remove-older-than 15D $dest_url --force >> $log_archive
 
 ## remove sql tar file older than 1 month on swift
-#threshold=82000
 threshold=1555200
-today=`date +%Y-%m-%d`
-db=`grep "/${_doma}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
 $get_token
-$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | grep ${db}.sql.gz | cut -d '/' -f 4 | \
-while read dob; do
+$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | jq '.name' | tr -d '\"' |\
+while read obj; do
+	 dob=`echo $obj | cut -d '/' -f 4`
 	 m=$((`date +%s` - `date -d "$dob" +%s`))
 	 if [ $m -gt $threshold ]; then
-	     $del_obj -c sqlbackup -o $srv_hostname/${_user}/${_doma}/$dob/${db}.sql.gz
+	 	 echo "--- "$obj
+	     $del_obj -c sqlbackup -o $obj
 	 fi
 done
 exit 0

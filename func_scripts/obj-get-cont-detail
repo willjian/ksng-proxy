@@ -24,6 +24,6 @@ curl -s -X GET \
 -H "Accept: application/json" \
 -H "Content-Type: application/json" \
 -H "X-Auth-Token: ${TOKEN}" \
-${OBJ_URL}/${OBJ_PREFIX}${TENANT_ID}/${CNAME} |jq '.'
+${OBJ_URL}/${OBJ_PREFIX}${TENANT_ID}/${CNAME} | jq '.[]| {name: .name, last_modified: .last_modified, size: .bytes}'
 
 exit 0
