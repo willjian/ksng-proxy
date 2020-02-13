@@ -1,7 +1,7 @@
 if [  'ja' = $WPLANG  ]; then
 	DL_URL='https://ja.wordpress.org/latest-ja.tar.gz';
 else
-	DL_URL='https://wordpress.org/latest.tar.gz';
+	DL_URL='https://kusanagi.tenten.cloud/cPanelInstall/latest.tar.gz';
 fi
 
 wget -q -O /dev/null --spider $DL_URL
@@ -186,7 +186,7 @@ sed -i "s/fqdn/$FQDN/g" /home/$CUSTOM_USER/$PROFILE/tools/bcache.clear.php
 cd /home/$CUSTOM_USER/$PROFILE/DocumentRoot
 mv wp-config-sample.php ../
 cd ..
-touch wp-config.php
-sed 's/username_here/'$DBUSER'/' wp-config-sample.php | sed 's/password_here/'$DBPASS'/' | sed 's/database_name_here/'$DBNAME'/' | sed 's/kusanagi/'$CUSTOM_USER'/' > wp-config.php
+sed -e 's/username_here/'$DBUSER'/' -e 's/password_here/'$DBPASS'/' -e 's/database_name_here/'$DBNAME'/' -e 's/kusanagi/'$CUSTOM_USER'/' wp-config-sample.php > wp-config.php
+sed -i -e "s/^\s*\(define\s*(\s*'FS_METHOD'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_HOST'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_USER'.*$\)/#\1/" wp-config.php
 chown -R $CUSTOM_USER:$CUSTOM_USER wp-config.php
 
