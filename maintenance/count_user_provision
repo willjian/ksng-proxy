@@ -1,0 +1,10 @@
+#!/bin/bash
+log=/tmp/count_user_provision.log
+echo -n '' > $log
+pwrd=`cat /root/.my.cnf | grep password | cut -d '"' -f2`
+mysql -p$pwrd -e "select login_id from kusanagi.account" | tail -n +2 |\
+while read acc; do
+	echo -n $acc" --- " >> $log
+	number=`mysql -p$pwrd -e "select count(*) from kusanagi.provision where user_name='$acc'" | tail -n +2`
+	echo $number >> $log
+done
