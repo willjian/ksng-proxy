@@ -1,0 +1,2 @@
+#!/bin/bash
+wget -O /usr/share/nginx/html/latest.tar.gz https://wordpress.org/latest.tar.gz
