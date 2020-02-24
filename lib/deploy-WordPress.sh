@@ -187,6 +187,7 @@ cd /home/$CUSTOM_USER/$PROFILE/DocumentRoot
 mv wp-config-sample.php ../
 cd ..
 sed -e 's/username_here/'$DBUSER'/' -e 's/password_here/'$DBPASS'/' -e 's/database_name_here/'$DBNAME'/' -e 's/kusanagi/'$CUSTOM_USER'/' wp-config-sample.php > wp-config.php
-sed -i -e "s/^\s*\(define\s*(\s*'FS_METHOD'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_HOST'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_USER'.*$\)/#\1/" wp-config.php
+#sed -i -e "s/^\s*\(define\s*(\s*'FS_METHOD'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_HOST'.*$\)/#\1/" -e "s/^\s*\(define\s*(\s*'FTP_USER'.*$\)/#\1/" wp-config.php
+sed -i -e '/FS_METHOD/d' -e '/FTP_/d' wp-config.php
 chown -R $CUSTOM_USER:$CUSTOM_USER wp-config.php
 

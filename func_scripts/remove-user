@@ -56,7 +56,8 @@ systemctl daemon-reload
 mysql -p$GetP kusanagi -e "DELETE FROM account WHERE login_id = '"$USERNAME"'"
 echo "Drop Userdb" $?
 #Delete_provision
-/usr/src/remove_all_provision -u $USERNAME;echo $?
+#/usr/src/remove_all_provision -u $USERNAME;echo $?
+/usr/src/rm_user_provs $USERNAME
 echo "Drop ALL Provision" $?
 #Delete Filerun
 sed -i "/$USERNAME/d" /usr/src/clean-Filerun
