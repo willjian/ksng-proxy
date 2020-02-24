@@ -1,0 +1,55 @@
+#!/bin/bash
+
+source /usr/lib/kusanagi/lib/functions.sh
+
+check_pass() {
+	local passwd=$1
+	if [[ "$passwd" =~ ^[a-zA-Z0-9\.\!\#\%\+\_\-]{8,}$ ]]; then
+		echo 0
+	else
+		echo 1
+	fi
+}
+
+gen_pass() {
+	local valid=1
+	while [ $valid -gt 0 ]
+	do
+		pa1=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 21`"#%+"
+		pa2=`echo ''$pa1'' | sed 's/./&\n/g' | shuf | tr -d "\n"`
+		valid=$(check_pass $pa2)
+	done
+	echo -n $pa2
+}
+
+change_db_root_password() {
+	local oldpass=$1
+	local newpass=$2
+	TMP=`echo "show databases" | mysql -uroot -p"$oldpass" 2>&1 | grep information`
+	if [ "$TMP" = "" ]; then
+		echo "Failed"
+		exit 1
+	fi
+	echo "SET PASSWORD = PASSWORD('$newpass')" | mysql -uroot -p"$oldpass"
+	sed -i "s/^\s*password\s*=.*$/password = \"$newpass\"/" /root/.my.cnf
+	echo "Password has changed"
+}
+
+change_pass_dbgovernor() {
+	local oldp=`grep password /etc/container/mysql-governor.xml | cut -d '"' -f 6`
+	sed -i "s|$oldp|$new|" /etc/container/mysql-governor.xml
+	systemctl restart db_governor
+}
+
+main() {
+	old=$(get_db_root_password)
+	new=$(gen_pass)
+	echo $old
+	echo $new
+	obf=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 44`
+	change_db_root_password $old $new
+	echo -n $new$obf > /usr/src/.lifesafty_cPanel
+	change_pass_dbgovernor
+}
+
+main
