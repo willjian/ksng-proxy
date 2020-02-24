@@ -1,14 +1,23 @@
 #!/bin/bash
 
-list_prov()
-{
-local i=0
-cat /etc/kusanagi.d/profile.conf | awk -F / '/home\/'$1'/ {print $4}' | cut -d '"' -f1 | \
-while read prov; do
-   echo $((++i))". "$prov
-   kusanagi remove -y $prov
-   mysql -p$pwrd kusanagi -e "DELETE FROM provision WHERE provision_name='$prov'"
-done
-}
+log=/usr/src/cPanel/Log/del_provision_log
 pwrd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
-list_prov $1
+
+delete_prov()
+{
+	if [ 0 -lt $(id ${1} > /dev/null 2>&1;echo $?) ] || [ -z ${1} ]; then
+		echo "No such user"
+		exit 1
+	fi
+	echo "goodbye $1"
+	echo `date` >> $log
+	local i=0
+	cat /etc/kusanagi.d/profile.conf | awk -F / '/home\/'$1'/ {print $4}' | cut -d '"' -f1 | \
+	while read prov; do
+		echo $((++i))". "$prov
+		kusanagi remove -y $prov >> $log
+		mysql -p$pwrd kusanagi -e "DELETE FROM provision WHERE provision_name='$prov'"
+	done
+}
+
+delete_prov $1
