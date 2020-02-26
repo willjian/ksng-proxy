@@ -24,21 +24,24 @@ if [ ! -d "${sql_dir}" ] && [ -d "/home/${_USER}/${_DOMA}" ]; then
 	chown -R ${_USER}:${_USER} ${sql_dir}
 	chmod 777 ${sql_dir}
 fi
+
+source /usr/src/check_alive_token
 srv_hostname=`hostname`
 dob=`date +%Y-%m-%d`
-## backup database
 bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
 pwrd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
 db_log="/var/log/${_DOMA}/db_backup_error_daily.log"
 echo -n '' > $db_log
-prov_=`echo ${_DOMA} | sed 's/\./\\\./'g`
-db=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf -A 1 | grep DBNAME | cut -d '"' -f2`
-valid=`mysql -ubk_user -p$bk_Passw0rd -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db'" | tail -n1`
-if [ ! -z $valid ]; then
+
+backup() {
+
+	## backup db
+	db=`mysql -ubk_user -p$bk_Passw0rd -e "select db_name from kusanagi.provision where user_name = '${_USER}' and provision_name = '${_DOMA}' and deactive_flg=0" | tail -n +2`
 	[ ! -z $db ] && mysqldump --single-transaction -ubk_user -p$bk_Passw0rd --databases $db 2> $db_log | gzip > ${sql_dir}/$db".sql.gz"
 	if [ -s $db_log ]; then
 		mysqldump --single-transaction -p$pwrd --databases $db | gzip > ${sql_dir}/$db".sql.gz"
 	fi
+
 	## backup source code
 	ignore_log="/var/log/${_DOMA}/ignore_bk.log"
 	echo -n '' > $ignore_log
@@ -50,8 +53,13 @@ if [ ! -z $valid ]; then
 	error_log="/var/log/${_DOMA}/error_bk.log"
 	duplicity --full-if-older-than=2W --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
 	RETVAL=$?
+
+	## backup db to gfs and swift
 	[ ! -z $db ] && cp ${sql_dir}/$db".sql.gz" /backup/$srv_hostname/${_USER}/${_DOMA} 2>&1 >/dev/null
-	[ ! -z $db ] && /usr/src/get_token && /usr/src/obj-upload-file -c sqlbackup/$srv_hostname/${_USER}/${_DOMA}/$dob -f ${sql_dir}/$db".sql.gz"
+	alive=$(check_alive_token)
+	[ $alive -eq 0 ] && /usr/src/get_token
+	[ ! -z $db ] && /usr/src/obj-upload-file -c sqlbackup/$srv_hostname/${_USER}/${_DOMA}/$dob -f ${sql_dir}/$db".sql.gz"
+
 	error=`grep Error $last_log | awk '{print $2}'`
 	if [ $RETVAL -eq 0 ] && [ $error -eq 0 ]; then
     	echo 0
@@ -63,8 +71,7 @@ if [ ! -z $valid ]; then
 		duplicity cleanup $dest_url --force >> $error_log
     	echo "Something error ! Please check $error_log"
 		echo 1
-	fi	
-else
-	echo "$db does not exist"
-	echo 1
-fi
+	fi
+}
+
+backup

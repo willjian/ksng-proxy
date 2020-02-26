@@ -1,0 +1,16 @@
+#!/bin/bash
+credential=/usr/src/credential
+source $credential
+
+check_alive_token() {
+	res=`curl -s -i -X GET \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "X-Auth-Token: ${TOKEN}" \
+	${OBJ_URL}/${OBJ_PREFIX}${TENANT_ID} | head -n 1`
+	if [[ $res =~ "200 OK" ]]; then
+		echo 1
+	else
+		echo 0
+	fi
+}

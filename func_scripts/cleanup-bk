@@ -17,26 +17,33 @@ if [ -z ${_user} ] || [ -z ${_doma} ]; then
 	usage
 fi
 
+source /usr/src/check_alive_token
 get_token="/usr/src/get_token"
 get_detail="/usr/src/obj-get-cont-detail"
 del_obj="/usr/src/obj-del-obj"
-## remove backup file older than 1 month
-srv_hostname=`hostname`
-dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
-log_archive="/var/log/${_doma}/archive_bk.log"
-echo "Cleanup ${_user}: ${_doma}"
-duplicity remove-older-than 15D $dest_url --force >> $log_archive
 
-## remove sql tar file older than 1 month on swift
-threshold=1555200
-$get_token
-$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | jq '.name' | tr -d '\"' |\
-while read obj; do
-	 dob=`echo $obj | cut -d '/' -f 4`
-	 m=$((`date +%s` - `date -d "$dob" +%s`))
-	 if [ $m -gt $threshold ]; then
-	 	 echo "--- "$obj
-	     $del_obj -c sqlbackup -o $obj
-	 fi
-done
+cleanup() {
+	## remove backup file older than 1 month
+	srv_hostname=`hostname`
+	dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
+	log_archive="/var/log/${_doma}/archive_bk.log"
+	echo "Cleanup ${_user}: ${_doma}"
+	duplicity remove-older-than 15D $dest_url --force >> $log_archive
+
+	## remove sql tar file older than 1 month on swift
+	threshold=1555200
+	alive=$(check_alive_token)
+	[ $alive -eq 0 ] && $get_token
+	$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | jq '.name' | tr -d '\"' |\
+	while read obj; do
+		dob=`echo $obj | cut -d '/' -f 4`
+		m=$((`date +%s` - `date -d "$dob" +%s`))
+		if [ $m -gt $threshold ]; then
+			echo "--- "$obj
+			$del_obj -c sqlbackup -o $obj
+		fi
+	done
+}
+
+cleanup
 exit 0
