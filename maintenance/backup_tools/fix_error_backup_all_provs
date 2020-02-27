@@ -9,7 +9,7 @@ while read line; do
 	exist=`echo $line |grep 'does not exist' > /dev/null 2>&1;echo $?`
 	if [ 0 -eq $exist ]; then
 		echo "$user_---$prov_---doesnt exist"
-		/opt/delete-death-backup-provision-singleuser $user_ $prov_
+		/opt/maintenance/backup_tools/delete-death-backup-provision-single $user_ $prov_
 	else
 		echo "$user_---$prov_"
 		/opt/maintenance/backup_tools/fix_error_backup_single  -u $user_ -p $prov_

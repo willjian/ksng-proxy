@@ -1,0 +1,21 @@
+#!/bin/bash
+
+delete_proc() {
+	get_token="/usr/src/get_token"
+	get_detail="/usr/src/obj-get-cont-detail"
+	del_obj="/usr/src/obj-del-obj"
+	srv_hostname=`hostname`
+
+	$get_detail -c sqlbackup?prefix=${srv_hostname}/${1}/${2} | grep $2 | cut -d '"' -f4 | \
+	while read obj; do
+		echo "obj: "$obj
+		$del_obj -c sqlbackup -o $obj
+	done
+	sed -i '/${2}$/d' /etc/cron.daily/backup-prov
+	sed -i '/${2}$/d' /etc/cron.weekly/cleanbk-prov
+	if [ -d "/backup/$srv_hostname/${1}/${2}" ]; then
+		rm -rf /backup/$srv_hostname/${1}/${2}
+	fi
+}
+
+delete_proc $1 $2
