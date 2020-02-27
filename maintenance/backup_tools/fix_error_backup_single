@@ -45,7 +45,7 @@ do
 		sigtar=`grep sigtar.gz $log | awk '{print $2}' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'`
 		echo "debug---"$sigtar
 		if [ -z $sigtar ]; then
-			echo "Please check backup $1 $2 again. Maybe it has backuped yet"
+			echo "Please check backup $1 $2 again. Maybe it has backed up yet"
 			break
 		fi
 		[ -n $sigtar ] && rm -f $sigtar
