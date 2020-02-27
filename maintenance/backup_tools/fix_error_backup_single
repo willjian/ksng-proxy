@@ -20,8 +20,8 @@ if [ -z $user_ ] || [ -z $prov_ ]; then
 fi
 
 
-fix_backup()
-{
+fix_backup() {
+
 srv_hostname=`hostname`
 dest_url="file:///backup/$srv_hostname/$1/$2"
 src_dir="/home/$1/$2"
@@ -33,19 +33,19 @@ do
 	duplicity --no-encryption verify $dest_url $src_dir 2>&1 | tee > $log
 	manifest=`grep AssertionError $log | cut -d "'" -f4`
 	if [ ! -z $manifest ]; then
-		echo "---"$manifest
+		echo "debug---"$manifest
 		rm -f $manifest
 		duplicity --no-encryption cleanup $dest_url --force
-		sigtar=`duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee | grep 'duplicity' | awk '{print $2}'`
-		echo "---"$sigtar
+		sigtar=`duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee | grep 'duplicity' | awk '{print $2}' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'`
+		echo "debug---"$sigtar
 		[ -n $sigtar ] && rm -f $sigtar
 		duplicity --no-encryption cleanup $dest_url --force
 	else
-		echo " No manifest error"
-		sigtar=`grep sigtar.gz $log | awk '{print $2}'`
-		echo "---"$sigtar
+		echo "debug---No manifest error"
+		sigtar=`grep sigtar.gz $log | awk '{print $2}' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'`
+		echo "debug---"$sigtar
 		if [ -z $sigtar ]; then
-			echo " Please check backup $1 $2 again"
+			echo "Please check backup $1 $2 again. Maybe it has backuped yet"
 			break
 		fi
 		[ -n $sigtar ] && rm -f $sigtar
