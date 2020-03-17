@@ -1,0 +1,15 @@
+#!/bin/bash
+log=/opt/maintenance/backup_tools/error_backup.txt
+echo -n '' > $log
+passbk=`cat /usr/src/.bk_user_dwp`
+
+find /var/log/ -type f -name error_bk.log -mtime 0 | while read f; do [ $(grep Error: $f >/dev/null 2>&1; echo $?) -eq 0 ] && ls $f ;done |\
+while read line; do
+	prov=`echo $line| cut -d '/' -f4`
+	user_=`mysql -ubk_user -p$passbk kusanagi -e "select user_name from provision where provision_name ='$prov' " | tail -n +2 | tail -n 1`
+	if [ -d "/home/$user_/$prov/" ]; then
+		echo $user_":"$prov >> $log
+	else
+		echo $user_":"$prov":does not exist" >> $log
+	fi
+done
