@@ -26,6 +26,7 @@ srv_hostname=`hostname`
 dest_url="file:///backup/$srv_hostname/$1/$2"
 src_dir="/home/$1/$2"
 log="/backup/$srv_hostname/$1/$2/verify_$2.log"
+clean_log="/backup/$srv_hostname/$1/$2/clean_${2}.log"
 cd /backup/$srv_hostname/$1/$2
 
 while [ 0 -lt $(duplicity --no-encryption verify $dest_url $src_dir > /dev/null 2>&1; echo $?) ]
@@ -36,13 +37,14 @@ do
 		echo "debug---"$manifest
 		rm -f $manifest
 		duplicity --no-encryption cleanup $dest_url --force
-		sigtar=`duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee | grep 'duplicity' | awk '{print $2}' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'`
-		echo "debug---"$sigtar
+		duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee > $clean_log
+		sigtar=`cat $clean_log | grep 'duplicity' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/' | uniq`
+		echo "debug: sigtar---"$sigtar
 		[ -n $sigtar ] && rm -f $sigtar
 		duplicity --no-encryption cleanup $dest_url --force
 	else
 		echo "debug---No manifest error"
-		sigtar=`grep sigtar.gz $log | awk '{print $2}' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'`
+		sigtar=`grep sigtar.gz $log | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/' | uniq`
 		echo "debug---"$sigtar
 		if [ -z $sigtar ]; then
 			echo "Please check backup $1 $2 again. Maybe it has backed up yet"
