@@ -9,7 +9,7 @@ find /var/log/ -type f -name error_bk.log -mtime 0 | while read f; do [ $(grep E
 while read line; do
 	prov=`echo $line| cut -d '/' -f4`
 	user_=`mysql -ubk_user -p$passbk kusanagi -e "select user_name from provision where provision_name ='$prov' " | tail -n 1`
-	if [ -n $user_ ]; then
+	if [ ! -z $user_ ]; then
 		if [ ! -d "/home/$user_/$prov/" ]; then
 			echo $user_":"$prov":does not exist" >> $log
 			sed -i '/-d '$prov'$/d' /etc/cron.daily/backup-prov
