@@ -51,7 +51,7 @@ backup() {
 	log_archive="/var/log/${_DOMA}/archive_bk.log"
 	last_log="/var/log/${_DOMA}/last_bk.log"
 	error_log="/var/log/${_DOMA}/error_bk.log"
-	duplicity --full-if-older-than=2W --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
+	duplicity --full-if-older-than=10D --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
 	RETVAL=$?
 
 	## backup db to gfs and swift
@@ -66,7 +66,7 @@ backup() {
 		echo $dob >> $log_archive
 		cat $last_log >> $log_archive
 	else
-		echo $dob >> $error_log
+		echo $dob"---Error:" >> $error_log
     	cat $last_log >> $error_log
 		duplicity cleanup $dest_url --force >> $error_log
     	echo "Something error ! Please check $error_log"

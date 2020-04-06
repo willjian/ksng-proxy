@@ -23,12 +23,12 @@ get_detail="/usr/src/obj-get-cont-detail"
 del_obj="/usr/src/obj-del-obj"
 
 cleanup() {
-	## remove backup file older than 1 month
+	## remove backup file older than 10 days
 	srv_hostname=`hostname`
 	dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
 	log_archive="/var/log/${_doma}/archive_bk.log"
 	echo "Cleanup ${_user}: ${_doma}"
-	duplicity remove-older-than 15D $dest_url --force >> $log_archive
+	duplicity remove-older-than 10D $dest_url --force >> $log_archive
 
 	## remove sql tar file older than 1 month on swift
 	threshold=1555200
