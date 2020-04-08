@@ -69,10 +69,34 @@ function get_wp_plugin {
 	echo $PLUGIN_VER
 }
 
+function get_woo_plugin {
+	local PLUGIN_NAME=$1
+	local WORK=/tmp/plugins.$$
+	local PREVDIR=`pwd`
+	mkdir $WORK
+	cd $WORK
+	local PLUGIN_VER=
+	local URL="http://initial.secureweb.vn/woocommerce.zip"
+	PLUGIN_VER="4.0.1"
+	ZIP=`basename $URL`
+	wget -q -O $ZIP $URL
+	unzip -q $ZIP
+	rm $ZIP
+	if [ -d $PLUGIN_NAME ] ; then
+		mv $PLUGIN_NAME /home/$CUSTOM_USER/$PROFILE/DocumentRoot/wp-content/plugins
+	else
+		PLUGIN_VER=
+	fi
+	cd $PREVDIR
+	rmdir $WORK
+	echo $PLUGIN_VER
+}
+
 # WooCommerce plugin
 if [ $OPT_WOO ] ; then
 	# get WooCommerce plugin
-	WOOCOMMERCE_VERSION=`get_wp_plugin woocommerce`
+	# WOOCOMMERCE_VERSION=`get_wp_plugin woocommerce`
+	WOOCOMMERCE_VERSION=`get_woo_plugin woocommerce`
 	if [ -n $WOOCOMMERCE_VERSION ] ; then
 		ACTIVE_PLUGINS="woocommerce/woocommerce.php"
 		echo $(eval_gettext "Install WooCommerce plugin")
@@ -80,25 +104,25 @@ if [ $OPT_WOO ] ; then
 		KUSANAGI_DEFAULT_INI=/home/$CUSTOM_USER/$PROFILE/settings/kusanagi-default.ini
 
 		# get Storefront theme
-                SF_URL=http://api.wordpress.org/themes/info/1.0/
-		SF_POST='action=theme_information&request=O:8:"stdClass":1:{s:4:"slug";s:10:"storefront";}'
+        # SF_URL=http://api.wordpress.org/themes/info/1.0/
+		# SF_POST='action=theme_information&request=O:8:"stdClass":1:{s:4:"slug";s:10:"storefront";}'
 		IS_SF_THEME=
-		wget -q -O /dev/null --spider --post-data $SF_POST $SF_URL
-		if [ $? -eq 0 ] ; then
+		# wget -q -O /dev/null --spider --post-data $SF_POST $SF_URL
+		# if [ $? -eq 0 ] ; then
 			# get version info
-			SF_DOWNLOAD=`wget -q -O - --post-data $SF_POST $SF_URL | \
-			  php -r 'echo unserialize(fgets(STDIN))->download_link;'`
+			# SF_DOWNLOAD=`wget -q -O - --post-data $SF_POST $SF_URL | php -r 'echo unserialize(fgets(STDIN))->download_link;'`
+			SF_DOWNLOAD="http://initial.secureweb.vn/storefront.zip"
 			SF_ZIP=storefront.zip
-			wget -q -O /dev/null $SF_DOWNLOAD
-			if [ $? -eq 0 ] ; then
+			# wget -q -O /dev/null $SF_DOWNLOAD
+			# if [ $? -eq 0 ] ; then
 				wget -O $SF_ZIP $SF_DOWNLOAD
 				unzip -q $SF_ZIP
 				rm $SF_ZIP
 				mv storefront /home/$CUSTOM_USER/$PROFILE/DocumentRoot/wp-content/themes/
 				echo $(eval_gettext "Install Storefront Theme")
 				IS_SF_THEME=1
-			fi
-		fi
+			# fi
+		# fi
 		if [ $IS_SF_THEME -ne 1 ] ; then
 			echo $(eval_gettext "Cannot install Storefront Theme")
 		fi
