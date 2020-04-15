@@ -1,7 +1,7 @@
 if [  'ja' = $WPLANG  ]; then
 	DL_URL='https://ja.wordpress.org/latest-ja.tar.gz';
 else
-	DL_URL='http://127.0.0.1/latest.tar.gz';
+	DL_URL='http://initial.secureweb.vn/latest.tar.gz';
 fi
 
 wget -q -O /dev/null --spider $DL_URL
