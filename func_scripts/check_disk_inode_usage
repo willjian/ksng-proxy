@@ -19,7 +19,7 @@ inode_usage() {
 srv_hostname=`hostname`
 log="/opt/total_user_disk_inode_usage.txt"
 main() {
-	mysql -u bk_user -p$bk_Passw0rd kusanagi -e "select concat_ws(',',login_id, name, phone, email, plan_id) from account where status=1" > $log
+	mysql -u bk_user -p$bk_Passw0rd kusanagi -e "select concat_ws(',',login_id, name, phone, email, plan_id) from account" > $log
 	sed -i '/concat_ws/a login_id, name, phone, email, plan_id, host_name, disk_usage_percent, inode_usage_percent' $log
 	sed -i '/concat_ws/d' $log
 	cat $log | tail -n +2 |\
