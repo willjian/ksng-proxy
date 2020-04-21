@@ -1,0 +1,34 @@
+#!/bin/bash
+
+bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+
+disk_usage() {
+	disk_usage=`xfs_quota -x -c 'report' /home | grep $1 | head -n1| awk '{print $2}'`
+	disk_quota=`xfs_quota -x -c 'report' /home | grep $1 | head -n1| awk '{print $3}'`
+	disk_usage_percent=`bc <<< "scale=2; $disk_usage * 100 / $disk_quota "`
+	echo $disk_usage_percent
+}
+
+inode_usage() {
+	inode_usage=`xfs_quota -x -c 'report -i' /home | grep $1 | head -n1| awk '{print $2}'`
+	inode_quota=`xfs_quota -x -c 'report -i' /home | grep $1 | head -n1| awk '{print $3}'`
+	inode_usage_percent=`bc <<< "scale=2; $inode_usage * 100 / $inode_quota "`
+	echo $inode_usage_percent
+}
+
+srv_hostname=`hostname`
+log="/opt/total_user_disk_inode_usage.txt"
+main() {
+	mysql -u bk_user -p$bk_Passw0rd kusanagi -e "select concat_ws(',',login_id, name, phone, email, plan_id) from account where status=1" > $log
+	sed -i '/concat_ws/a login_id, name, phone, email, plan_id, host_name, disk_usage_percent, inode_usage_percent' $log
+	sed -i '/concat_ws/d' $log
+	cat $log | tail -n +2 |\
+	while read line; do		
+		user_=`echo $line | cut -d ',' -f1`
+		disk=$(disk_usage $user_)
+		inode=$(inode_usage $user_)
+		sed -i '/^'$user_',/ s/$/, '$srv_hostname', '$disk', '$inode'/' $log
+	done
+}
+
+main
