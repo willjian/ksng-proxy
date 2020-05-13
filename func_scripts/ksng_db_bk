@@ -1,12 +1,14 @@
 #!/bin/bash
 bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
-srv_hostname=`hostname`
+srv_hostname=`hostname -f`
 dob=`date +%Y%m%d`
 declare -a list=("kusanagi" "mysql" "proxy")
 for i in "${list[@]}"
 do
 	dest="/home/kusanagi/${i}_${dob}.sql.gz"
 	mysqldump --single-transaction -ubk_user -p$bk_Passw0rd --databases $i | gzip > $dest
-	cp $dest /backup/$srv_hostname/ 2>&1 > /dev/null
+	cp $dest /backup/$srv_hostname/ > /dev/null 2>&1
 	/usr/src/obj-upload-file -c sqlbackup/$srv_hostname -f $dest
+	find /backup/$srv_hostname/ -maxdepth 1 -type f \( -name "kusanagi*.sql.gz" -o -name "mysql*.sql.gz" -o -name "proxy*.sql.gz" \) -mtime +10 -exec rm {} +
+	find /home/kusanagi/ -maxdepth 1 -type f \( -name "kusanagi*.sql.gz" -o -name "mysql*.sql.gz" -o -name "proxy*.sql.gz" \) -mtime +10 -exec rm {} +
 done

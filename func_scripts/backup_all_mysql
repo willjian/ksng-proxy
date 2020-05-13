@@ -1,0 +1,40 @@
+#!/bin/bash
+date=`date +%A`
+time=`date`
+GetP=`cat /usr/src/.lifesafty_cPanel | cut -c1-24`
+Hostname=`hostname -f`
+#Prepare path:
+CHECK_PATH=`ls /backup/$Hostname/backup_mysql > /dev/null; echo $?`
+if [ $CHECK_PATH -gt 0 ]; then
+mkdir -p /backup/$Hostname/backup_mysql; echo $?
+fi
+CHECKPATH2=`ls /home/backup_mysql > /dev/null; echo $?`
+if [ $CHECKPATH2 -gt 0 ]; then
+mkdir -p /home/backup_mysql; echo $?
+fi
+#Nginx check path
+CHECK_PATH3=`ls /backup/$Hostname/backup_nginx_all > /dev/null; echo $?`
+if [ $CHECK_PATH3 -gt 0 ]; then
+mkdir -p /backup/$Hostname/backup_nginx_all; echo $?
+fi
+CHECK_PATH4=`ls /root/.tmp/backup_nginx_all > /dev/null; echo $?`
+if [ $CHECK_PATH4 -gt 0 ]; then
+mkdir -p /root/.tmp/backup_nginx_all; echo $?
+fi
+#backup nginx
+mkdir -p /root/.tmp/backup_nginx_all/$date
+truncate -s 0 /etc/nginx/off
+truncate -s 0 /root/.tmp/backup_nginx_all/*/off
+truncate -s 0 /backup/$Hostname/backup_nginx_all/*/off
+rsync -avzh  --exclude "/etc/nginx/off" /etc/nginx/ /root/.tmp/backup_nginx_all/$date/
+rsync -avzh /root/.tmp/backup_nginx_all/$date /backup/$Hostname/backup_nginx_all/
+#Clear old backup
+rm -f /home/backup_mysql/"$date"_filedb.zip; echo $? "$time" >> /root/.tmp/backup_mysql.log
+rm -f /home/backup_mysql/"$date"_all_db.sql.gz; echo $? "$time" >> /root/.tmp/backup_mysql.log
+rm -f /backup/$Hostname/backup_mysql/"$date"_filedb.zip; echo $? "$time" >> /root/.tmp/backup_mysql.log
+rm -f /backup/$Hostname/backup_mysql/"$date"_all_db.sql.gz; echo $? "$time" >> /root/.tmp/backup_mysql.log
+#Create new backup
+#zip -r /home/backup_mysql/"$date"_filedb.zip /var/lib/mysql/*; echo $? "$time" >> /root/.tmp/backup_mysql.log
+#cp /home/backup_mysql/"$date"_filedb.zip /backup/$Hostname/backup_mysql/;echo $? "$time" >> /root/.tmp/backup_mysql.log
+mysqldump -uroot -p$GetP --events --single-transaction --quick --all-databases | gzip > /home/backup_mysql/"$date"_all_db.sql.gz; echo $? "$time" >> /root/.tmp/backup_mysql.log
+cp /home/backup_mysql/"$date"_all_db.sql.gz /backup/$Hostname/backup_mysql/; echo $? "$time" >> /root/.tmp/backup_mysql.log
