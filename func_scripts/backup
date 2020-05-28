@@ -22,7 +22,7 @@ sql_dir="/home/${_USER}/${_DOMA}/sqlbackup"
 if [ ! -d "${sql_dir}" ] && [ -d "/home/${_USER}/${_DOMA}" ]; then
 	mkdir -p ${sql_dir}
 	chown -R ${_USER}:${_USER} ${sql_dir}
-	chmod 777 ${sql_dir}
+	chmod 0777 ${sql_dir}
 fi
 
 source /usr/src/check_alive_token
@@ -45,7 +45,7 @@ backup() {
 	## backup source code
 	ignore_log="/var/log/${_DOMA}/ignore_bk.log"
 	echo -n '' > $ignore_log
-	find /home/${_USER}/${_DOMA}/ -type f -name "*.tar.gz" -o -name "*.zip" >> $ignore_log
+	find /home/${_USER}/${_DOMA}/ -type f \( -name "*.tar.gz" -o -name "*.zip" \) >> $ignore_log
 	src_dir="/home/${_USER}/${_DOMA}"
 	dest_url="file:///backup/$srv_hostname/${_USER}/${_DOMA}"
 	log_archive="/var/log/${_DOMA}/archive_bk.log"
