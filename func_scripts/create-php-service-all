@@ -30,4 +30,5 @@ mysql -ubk_user -p$bk_pass kusanagi -e "select login_id from account" | tail -n 
 while read us; do
 	echo "---"$us
 	create_php_srv $us
+	/usr/src/create-filerun -u $us
 done
