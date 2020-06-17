@@ -39,7 +39,7 @@ function k_read_profile() {
 		eval $(awk "/^\[.+\]/ {p = 0 } /^\[$PROFILE\]/ { p = 1 } p == 1" $INIFILE | \
 			awk '$1 ~ /^.+=.+$/ {print $1} ')
 	fi
-
+	local CUSTOM_USER=`grep '\['$PROFILE'\]' $PROFILECONF -A 10 | grep KUSANAGI_USER | cut -d '"' -f2`
 	# set uninitialized value
 	local IS_WRITABLE=0
 	if [[ ! -v KUSANAGI_DIR ]] ; then
@@ -138,9 +138,9 @@ function k_status() {
 	#echo "*** Apache2 ***"
 	#systemctl status httpd | head -3
 	#echo
-	echo "*** HHVM ***"
-	systemctl status hhvm | head -3
-	echo
+	#echo "*** HHVM ***"
+	#systemctl status hhvm | head -3
+	#echo
 	#echo "*** php-fpm ***"
 	#systemctl status php-fpm | head -3
 	#echo
@@ -259,16 +259,16 @@ function k_httpd() {
 	k_monit_reloadmonitor
 }
 
-function k_phpfpm() {
-	echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
-	if [ 0 -eq $(k_is_enabled hhvm) ] ; then
-		systemctl stop hhvm && systemctl disable hhvm
-	fi
-	if [ 0 -eq $(k_is_enabled php7-fpm) ] ; then
-		systemctl stop php7-fpm && systemctl disable php7-fpm
-	fi
-	systemctl restart php-fpm && systemctl enable php-fpm
-}
+#function k_phpfpm() {
+#	echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
+#	if [ 0 -eq $(k_is_enabled hhvm) ] ; then
+#		systemctl stop hhvm && systemctl disable hhvm
+#	fi
+#	if [ 0 -eq $(k_is_enabled php7-fpm) ] ; then
+#		systemctl stop php7-fpm && systemctl disable php7-fpm
+#	fi
+#	systemctl restart php-fpm && systemctl enable php-fpm
+#}
 
 function k_php7() {
 	echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
@@ -281,16 +281,64 @@ function k_php7() {
 	systemctl restart php7-fpm && systemctl enable php7-fpm
 }
 
-function k_hhvm() {
-	echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
-	if [ 0 -eq $(k_is_enabled php7-fpm) ] ; then
-		systemctl stop php7-fpm && systemctl disable php7-fpm
-	fi
-	if [ 0 -eq $(k_is_enabled php-fpm) ] ; then
-		systemctl stop php-fpm && systemctl disable php-fpm
-	fi
-	systemctl restart hhvm && systemctl enable hhvm
+#function k_hhvm() {
+#	echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
+#	if [ 0 -eq $(k_is_enabled php7-fpm) ] ; then
+#		systemctl stop php7-fpm && systemctl disable php7-fpm
+#	fi
+#	if [ 0 -eq $(k_is_enabled php-fpm) ] ; then
+#		systemctl stop php-fpm && systemctl disable php-fpm
+#	fi
+#	systemctl restart hhvm && systemctl enable hhvm
+#}
+
+####### configure switching among php versions
+source /usr/lib/kusanagi/lib/sw-php.sh
+function sw_latest_selected_php_proc() {
+        # sw all provisions to the latest selected php version
+        # $1 is user, $2 is desired php version
+        bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+        mysql -ubk_user -p$bk_Passw0rd \
+        -e "select provision_name from kusanagi.provision where user_name = '$1' and deactive_flg = 0" | tail -n +2 |\
+        while read prov; do
+			if [ 0 -lt $(grep -E '^\s*fastcgi_pass\s+unix:\/var\/cache\/php-fpm\/' /etc/nginx/conf.d/${prov}_http.conf > /dev/null 2>&1; echo $?) ]; then
+                sw_php $prov $2
+			fi
+        done
+        if [ 0 -eq $(check_nginx_valid) ]; then
+                systemctl reload nginx && systemctl enable nginx
+        else
+                echo "Nginx error. Please check"
+        fi
 }
+function k_php_sw() {
+        #input: php_version username
+        local php_ver=$1
+        local user_=$2
+        for i in php7 php71 php72 php73 php74
+        do
+                if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] ; then
+                        systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
+                fi
+        done
+        [ "$php_ver" == "php70" ] && php_ver="php7"
+        if [ ! -d "/home/${user_}/log/php7" ]; then
+                mkdir -p /home/${user_}/log/php7
+                mkdir /home/${user_}/log/php7/session
+                mkdir /home/${user_}/log/php7/wsdlcache
+                chown -R ${user_}.${user_} /home/${user_}/log
+        fi
+        #systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
+		if [ "$php_ver" != "php" ]; then
+			systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
+        	sw_latest_selected_php_proc ${user_} ${php_ver}
+		fi
+}
+
+######end
+
+
+
 
 function k_ruby24() {
     echo $(eval_gettext "use TARGET") | sed "s|TARGET|$1|"
@@ -519,9 +567,10 @@ function k_fcache() {
 		if [ -d $NGINX_CACHE_DIR ]; then
 			OWNER=`ls -dl $NGINX_CACHE_DIR | awk '{ print $3}'`
 			NUM_DIR=`ls -dl $NGINX_CACHE_DIR | wc -l`
-			if [ "$OWNER" = "httpd" ] && [ "$NUM_DIR" = "1" ]; then
+			if [ "$OWNER" = "kusanagi" ] && [ "$NUM_DIR" = "1" ]; then
 				echo $(eval_gettext "Clearing cache")
-				rm -rf $NGINX_CACHE_DIR/*
+				WP_CACHE_DIR=`grep -r "$KUSANAGI_FQDN" | cut -d " " -f3`
+				rm -f $WP_CACHE_DIR
 			fi
 			return
 		else
@@ -566,7 +615,12 @@ function k_bcache() {
 				sed -i "s/^\s*define\s*(\s*'WP_CACHE'.*$/define('WP_CACHE', true);/" $WPCONFIG
 				sed -i "s/^\s*[#\/]\+\s*define\s*(\s*'WP_CACHE'.*$/define('WP_CACHE', true);/" $WPCONFIG
 			else
-				echo $(eval_gettext "Failed. Constant WP_CACHE defined multiple.")
+				CHECK=`cat $WPCONFIG | grep "WP_CACHE" > /dev/null; echo $?`
+				if [ $CHECK -eq 0 ]; then
+				exit 1
+				fi
+				sed -i "/define('WP_DEBUG', false);/a\define('WP_CACHE', true);" $WPCONFIG
+				#echo $(eval_gettext "Failed. Constant WP_CACHE defined multiple.")
 			fi
 
 		fi
@@ -793,4 +847,3 @@ function k_generate_seckey() {
 		echo $(eval_gettext "Finish.") 1>&2
 	fi
 }
-
