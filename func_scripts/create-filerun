@@ -17,6 +17,9 @@ if [ -z ${AMAN} ]; then
 	usage
 fi
 	# create FileManager
+	if [ -d "/home/$AMAN/.FileManager" ]; then
+		rm -rf /home/$AMAN/.FileManager
+	fi
 	mkdir -p /home/$AMAN/.FileManager
 	unzip -qq -d /home/$AMAN/.FileManager /usr/src/cPanel/FileManager_source/Webmaster_Filerun_sample.zip
 	cat <<EOT > /home/$AMAN/.FileManager/system/data/autoconfig.php
