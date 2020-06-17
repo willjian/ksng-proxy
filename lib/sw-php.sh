@@ -31,7 +31,7 @@ function sw_php() {
 	 	sed -i 's/^.*\(fastcgi_pass unix:\/var\/cache\/hhvmd\/'$owner'.sock;.*$\)/\t\t\t#\1/' /etc/nginx/conf.d/${1}_http.conf
  	 	sed -i 's/^.*\(fastcgi_pass unix:\/var\/cache\/hhvmd\/'$owner'.sock;.*$\)/\t\t\t#\1/' /etc/nginx/conf.d/${1}_ssl.conf
 		else
-			echo " [CRITICAL] can not determine owner. please check profile conf"
+			#echo " [CRITICAL] can not determine owner. please check profile conf"
 			exit 1
 		fi
 	 	## reload nginx configuration
