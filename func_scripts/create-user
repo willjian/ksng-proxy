@@ -57,7 +57,7 @@ else
 	mkdir /home/${AMAN}/log
 	create_log_dir php7
 	create_log_dir php-fpm
-	for i in php php7 php71 php72 php73 php74
+	for i in php php71 php72 php73 php74
 	do
 		/usr/src/create-${i}-conf -d $AMAN -u $AMAN
 	done

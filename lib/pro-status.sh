@@ -10,7 +10,7 @@ function sub_proc() {
 	owner=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf | grep DIR | cut -d '/' -f 3`
 	if [ $php7 -eq 1 ]; then
 		ok=0
-		for i in php7 php71 php72 php73 php74
+		for i in php71 php72 php73 php74
 		do
 			if [ 0 -eq $(k_is_active ${i}-fpm.$owner) ] ; then
 				j=`echo $i | tr  '[a-z]' '[A-Z]'`

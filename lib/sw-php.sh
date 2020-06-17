@@ -11,7 +11,7 @@ function sw_php() {
 		prov_=`echo ${1} | sed 's/\./\\\./'g`
 	 	owner=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf | grep DIR | cut -d '/' -f 3`
 		if [ ! -z ${owner} ]; then
-		if [[ "$2" =~ ^(php7|php71|php72|php73|php74)$ ]]; then
+		if [[ "$2" =~ ^(php71|php72|php73|php74)$ ]]; then
 			## enable php7-fpm unix socket
 			sed -i 's/^.*\(fastcgi_pass unix:\/var\/cache\/php7-fpm\/'$owner'.sock;.*$\)/\t\t\t\1/' /etc/nginx/conf.d/${1}_http.conf
 			sed -i 's/^.*\(fastcgi_pass unix:\/var\/cache\/php7-fpm\/'$owner'.sock;.*$\)/\t\t\t\1/' /etc/nginx/conf.d/${1}_ssl.conf
