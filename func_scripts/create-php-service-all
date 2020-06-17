@@ -1,0 +1,33 @@
+#!/bin/bash
+
+create_log_dir() {
+	local AMAN=$1
+	if [ ! -d "/home/$AMAN/log/php7" ]; then
+		mkdir -p /home/$AMAN/log/php7
+		mkdir /home/$AMAN/log/php7/session
+    	mkdir /home/$AMAN/log/php7/wsdlcache
+	fi
+}
+
+
+# create php7-fpm configuration 
+create_php_srv() {
+	local AMAN=$1
+	create_log_dir $AMAN
+	chown -R $AMAN:$AMAN /home/${AMAN}/log
+	for i in php71 php72 php73 php74
+	do
+		/usr/src/create-$i-conf -d $AMAN -u $AMAN
+	done
+	if [ -f "/etc/systemd/system/hhvm.$AMAN.service" ]; then
+		systemctl stop hhvm.$AMAN
+		systemctl disable hhvm.$AMAN
+		mv /etc/systemd/system/hhvm.$AMAN.service /opt/archive_hhvm
+	fi
+}
+bk_pass=`cat /usr/src/.bk_user_dwp`
+mysql -ubk_user -p$bk_pass kusanagi -e "select login_id from account" | tail -n +2 |\
+while read us; do
+	echo "---"$us
+	create_php_srv $us
+done
