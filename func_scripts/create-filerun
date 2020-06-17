@@ -34,7 +34,7 @@ EOT
 	chmod 400 /home/$AMAN/.FileManager/system/data/lifeconfig
 	mysql -p$GetP -e "drop database if exists Filerun_"$AMAN"_db"
 	mysql -p$GetP -e "create database Filerun_"$AMAN"_db"
-	mysql -p$GetP -e "drop user if exists Filerun_"$AMAN"_user"
+	mysql -p$GetP -e "drop user Filerun_"$AMAN"_user"
 	mysql -p$GetP -e "create user 'Filerun_"$AMAN"_user'@'%' identified with mysql_native_password;"
 	mysql -p$GetP -e "set old_passwords = 0;"
 	mysql -p$GetP -e "set password for 'Filerun_"$AMAN"_user'@'%' = password('$FileP')"
