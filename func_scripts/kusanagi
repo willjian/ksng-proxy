@@ -54,15 +54,15 @@ case ${1} in
 	nginx)
 		k_nginx $@
 	;;
-	php-fpm)
-		k_phpfpm $@
-	;;
+	#php-fpm)
+	#	k_phpfpm $@
+	#;;
 	php7)
 		k_php7 $@
 	;;
-	hhvm)
-		k_hhvm $@
-	;;
+	#hhvm)
+	#	k_hhvm $@
+	#;;
 	ruby24)
 		k_ruby24 $@
 	;;
@@ -96,7 +96,17 @@ case ${1} in
 	configure)
 		k_configure $@
 	;;
-
+	which_php)
+		source $LIBDIR/which_php.sh
+		get_php_ver $2
+	;;
+	restart_php)
+		source $LIBDIR/which_php.sh
+		restart_php $2
+	;;
+	switch_php)
+		k_php_sw $2 $3
+	;;
 	update)
 		check_profile
 		k_update $@
@@ -211,12 +221,6 @@ images [--jpg|--jpeg|--png] [--verbose] [--dir|--directory dirname]
 monit [on|off|config|reload]
 zabbix [on|off]
 ----------------------
-- custom made -
-pro_list {user} : show provision list created by user
-pro_hhvm {provision}: change middleware for provision to hhvm
-pro_php7 {provision}: change middleware for provision to php7
-pro_status {provision}: show brief status information of provision
----------------------
 EOD
 	;;
 	*)
