@@ -1,6 +1,5 @@
 #!/bin/bash
-function usage()
-{
+function usage() {
 	echo " Remove user and all provision belong to it"
 	echo " Usage $0 -u user "
 	exit 1
@@ -17,47 +16,51 @@ if [ -z ${USERNAME} ]; then
 fi
 
 GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
-delete_php_conf()
-{
-RET=`systemctl is-active $1-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?`
+
+delete_php_conf() {
+RET=`systemctl is-active ${1}-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?`
 if [ $RET -eq 0 ]; then
 	systemctl stop $1-fpm.$USERNAME
 	systemctl disable $1-fpm.$USERNAME
-	rm -f /etc/$1-fpm.d/conf.d/$USERNAME.conf
-	rm -f /etc/$1-fpm.d/www.$USERNAME.conf
-	rm -f /usr/lib/systemd/system/$1-fpm.$USERNAME.service
-elif [ -f "/usr/lib/systemd/system/$1-fpm.$USERNAME.service" ]; then
+	rm -f /etc/$1-fpm.d/conf.d/${USERNAME}.conf
+	rm -f /etc/$1-fpm.d/www.${USERNAME}.conf
+	rm -f /usr/lib/systemd/system/$1-fpm.${USERNAME}.service
+elif [ -f "/usr/lib/systemd/system/$1-fpm.${USERNAME}.service" ]; then
     systemctl disable $1-fpm.$USERNAME
-	rm -f /etc/$1-fpm.d/conf.d/$USERNAME.conf
-    rm -f /etc/$1-fpm.d/www.$USERNAME.conf
-    rm -f /usr/lib/systemd/system/$1-fpm.$USERNAME.service
+	rm -f /etc/$1-fpm.d/conf.d/${USERNAME}.conf
+    rm -f /etc/$1-fpm.d/www.${USERNAME}.conf
+    rm -f /usr/lib/systemd/system/$1-fpm.${USERNAME}.service
 fi
 }
-delete_hhvm_conf()
-{
+
+delete_hhvm_conf() {
 RET=`systemctl is-active hhvm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?`
 if [ $RET -eq 0 ]; then
 	systemctl stop hhvm.$USERNAME
 	systemctl disable hhvm.$USERNAME
-	rm -f /etc/hhvm/conf.d/$USERNAME.ini
+	rm -f /etc/hhvm/conf.d/${USERNAME}.ini
 	rm -f /var/cache/hhvmd/$USERNAME.*
-	rm -f /etc/systemd/system/hhvm.$USERNAME.service
-elif [ -f "/etc/systemd/system/hhvm.$USERNAME.service" ] ; then
+	rm -f /etc/systemd/system/hhvm.${USERNAME}.service
+elif [ -f "/etc/systemd/system/hhvm.${USERNAME}.service" ] ; then
 	systemctl disable hhvm.$USERNAME
-    rm -f /etc/hhvm/conf.d/$USERNAME.ini
+    rm -f /etc/hhvm/conf.d/${USERNAME}.ini
     rm -f /var/cache/hhvmd/$USERNAME.*
-    rm -f /etc/systemd/system/hhvm.$USERNAME.service
+    rm -f /etc/systemd/system/hhvm.${USERNAME}.service
 fi
 }
-delete_php_conf php7
-delete_php_conf php
+
+delete_hhvm_conf
+for i in php php7 php71 php72 php73 php74
+do
+	delete_php_conf $i
+done
 systemctl daemon-reload
+
 #Delete user from account table
 mysql -p$GetP kusanagi -e "DELETE FROM account WHERE login_id = '"$USERNAME"'"
 echo "Drop Userdb" $?
 #Delete_provision
-#/usr/src/remove_all_provision -u $USERNAME;echo $?
-/usr/src/rm_user_provs $USERNAME
+/usr/src/remove_all_provision -u $USERNAME;echo $?
 echo "Drop ALL Provision" $?
 #Delete Filerun
 sed -i "/$USERNAME/d" /usr/src/clean-Filerun
@@ -76,4 +79,4 @@ userdel --remove $USERNAME
 sed -i '/'$USERNAME':/d' /root/.hungpham/userpass_list.log
 sed -i '/'$uid'/d' /var/superpanel/user_package
 sed -i '/'$uid',/d' /var/superpanel/users
-#rm -rf /var/log/$USERNAME
+rm -rf /var/log/$USERNAME
