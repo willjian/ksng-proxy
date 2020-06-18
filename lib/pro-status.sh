@@ -2,12 +2,16 @@
 
 ## show brief provision information
 
+source /usr/lib/kusanagi/lib/sw-php.sh
+
 function sub_proc() {
 	# input $2 is http or ssl
 	php7=`grep '/var/cache/php7-fpm' /etc/nginx/conf.d/$1_$2.conf | grep '#' 2>&1 > /dev/null;echo $?`
 	php5=`grep '/var/cache/php-fpm' /etc/nginx/conf.d/$1_$2.conf | grep '#' 2>&1 > /dev/null;echo $?`
-	prov_=`echo ${1} | sed 's/\./\\\./'g`
-	owner=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf | grep DIR | cut -d '/' -f 3`
+	#prov_=`echo ${1} | sed 's/\./\\\./'g`
+	#owner=`grep "/${prov_}\"" /etc/kusanagi.d/profile.conf | grep DIR | cut -d '/' -f 3`
+	owner=$(get_user $1)
+	
 	if [ $php7 -eq 1 ]; then
 		ok=0
 		for i in php71 php72 php73 php74
