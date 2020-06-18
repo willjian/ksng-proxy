@@ -315,22 +315,19 @@ function k_php_sw() {
         #input: php_version username
         local php_ver=$1
         local user_=$2
-        #for i in php7 php71 php72 php73 php74
-		for i in php71 php72 php73 php74
-        do
+		if [ "$php_ver" != "php" ]; then
+        	for i in php7 php71 php72 php73 php74
+        	do
                 if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] ; then
                         systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
                 fi
-        done
-        #[ "$php_ver" == "php70" ] && php_ver="php7"
-        if [ ! -d "/home/${user_}/log/php7" ]; then
+        	done
+        	if [ ! -d "/home/${user_}/log/php7" ]; then
                 mkdir -p /home/${user_}/log/php7
                 mkdir /home/${user_}/log/php7/session
                 mkdir /home/${user_}/log/php7/wsdlcache
                 chown -R ${user_}.${user_} /home/${user_}/log
-        fi
-        #systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
-		if [ "$php_ver" != "php" ]; then
+        	fi
 			systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
         	sw_latest_selected_php_proc ${user_} ${php_ver}
 		fi
