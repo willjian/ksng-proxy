@@ -295,47 +295,45 @@ function k_php7() {
 ####### configure switching among php versions
 source /usr/lib/kusanagi/lib/sw-php.sh
 function sw_latest_selected_php_proc() {
-        # sw all provisions to the latest selected php version
-        # $1 is user, $2 is desired php version
-        bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
-        mysql -ubk_user -p$bk_Passw0rd \
-        -e "select provision_name from kusanagi.provision where user_name = '$1' and deactive_flg = 0" | tail -n +2 |\
-        while read prov; do
-			if [ 0 -lt $(grep -E '^\s*fastcgi_pass\s+unix:\/var\/cache\/php-fpm\/' /etc/nginx/conf.d/${prov}_http.conf > /dev/null 2>&1; echo $?) ]; then
-                sw_php $prov $2
-			fi
-        done
-        if [ 0 -eq $(check_nginx_valid) ]; then
-                systemctl reload nginx && systemctl enable nginx
-        else
-                echo "Nginx error. Please check"
-        fi
+	# sw all provisions to the latest selected php version
+	# $1 is user, $2 is desired php version
+	bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+	mysql -ubk_user -p$bk_Passw0rd \
+    -e "select provision_name from kusanagi.provision where user_name = '$1' and deactive_flg = 0" | tail -n +2 |\
+	while read prov; do
+		if [ 0 -lt $(grep -E '^\s*fastcgi_pass\s+unix:\/var\/cache\/php-fpm\/' /etc/nginx/conf.d/${prov}_http.conf > /dev/null 2>&1; echo $?) ]; then
+			sw_php $prov $2
+		fi
+	done
+	if [ 0 -eq $(check_nginx_valid) ]; then
+		systemctl reload nginx && systemctl enable nginx
+	else
+		echo "Nginx error. Please check"
+	fi
 }
 function k_php_sw() {
-        #input: php_version username
-        local php_ver=$1
-        local user_=$2
-		if [ "$php_ver" != "php" ]; then
-        	for i in php7 php71 php72 php73 php74
-        	do
-                if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] ; then
-                        systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
-                fi
-        	done
-        	if [ ! -d "/home/${user_}/log/php7" ]; then
-                mkdir -p /home/${user_}/log/php7
-                mkdir /home/${user_}/log/php7/session
-                mkdir /home/${user_}/log/php7/wsdlcache
-                chown -R ${user_}.${user_} /home/${user_}/log
-        	fi
-			systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
-        	sw_latest_selected_php_proc ${user_} ${php_ver}
+	#input: php_version username
+	local php_ver=$1
+	local user_=$2
+	if [ "$php_ver" != "php" ]; then
+		for i in php7 php71 php72 php73 php74
+		do
+			if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] ; then
+				systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
+			fi
+		done
+		if [ ! -d "/home/${user_}/log/php7" ]; then
+			mkdir -p /home/${user_}/log/php7
+			mkdir /home/${user_}/log/php7/session
+			mkdir /home/${user_}/log/php7/wsdlcache
+			chown -R ${user_}.${user_} /home/${user_}/log
 		fi
+		systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
+		sw_latest_selected_php_proc ${user_} ${php_ver}
+	fi
 }
 
 ######end
-
-
 
 
 function k_ruby24() {
