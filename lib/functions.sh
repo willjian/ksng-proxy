@@ -318,7 +318,7 @@ function k_php_sw() {
 	if [ "$php_ver" != "php" ]; then
 		for i in php7 php71 php72 php73 php74
 		do
-			if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] ; then
+			if [ 0 -eq $(k_is_enabled ${i}-fpm.${user_}) ] || [ 0 -eq $(k_is_active ${i}-fpm.${user_}) ]; then
 				systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
 			fi
 		done
