@@ -29,6 +29,11 @@ bk_pass=`cat /usr/src/.bk_user_dwp`
 mysql -ubk_user -p$bk_pass kusanagi -e "select login_id from account" | tail -n +2 |\
 while read us; do
 	echo "---"$us
-	create_php_srv $us
-	/usr/src/create-filerun -u $us
+	#create_php_srv $us
+	#/usr/src/create-filerun -u $us
+	if [ 0 -eq $(systemctl is-active php7-fpm.$us | grep -w active > /dev/null 2>&1;echo $?) ]; then
+	systemctl stop php7-fpm.$us
+	#systemctl disable php7-fpm.$us
+	kusanagi switch_php php71 $us
+	fi
 done
