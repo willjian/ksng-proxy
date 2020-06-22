@@ -18,9 +18,8 @@ done
 if [ -z $AMAN ] || [ -z $DOMA ] ; then
  usage
 fi
-base_url="swift://vod/backup"
-credential_file=/root/dup_swift
-source $credential_file
+srv_hostname=`hostname`
+base_url="file:///backup/$srv_hostname"
 duplicity collection-status $base_url/$AMAN/$DOMA | awk '
 #/Number of contained backup/ {print;}
 /Full/ {
