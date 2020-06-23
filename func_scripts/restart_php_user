@@ -1,7 +1,6 @@
 #!/bin/bash
-function usage()
-{
-	echo " Restart all php7-fpm & hhvm "
+function usage() {
+	echo " Restart all php & hhvm "
 	echo " Usage $0 -u user "
 	exit 1
 }
@@ -15,9 +14,12 @@ while getopts u: OPT
 if [ -z ${USERNAME} ]; then
 	usage
 fi
-if [ 0 -eq $(systemctl is-active php7-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
-	systemctl restart php7-fpm.$USERNAME
-fi
-if [ 0 -eq $(systemctl is-active php-fpm.$USERNAME | grep -w "active" 2>&1 > /dev/null;echo $?) ]; then
-	systemctl restart php-fpm.$USERNAME
-fi
+#systemctl restart php7-fpm.$USERNAME
+#for i in php 
+#do
+#	if [ 0 -eq $(ls /etc/$i-fpm.d/conf.d/$USERNAME.conf > /dev/null; echo $?) ] ; then
+#				systemctl restart $i-fpm.$USERNAME; echo $?
+#														fi				
+#	done
+#exit 0
+kusanagi restart_php $USERNAME
