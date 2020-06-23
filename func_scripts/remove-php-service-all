@@ -1,0 +1,45 @@
+#!/bin/bash
+
+delete_php_conf() {
+RET=`systemctl is-active ${1}-fpm.$2 | grep -w "active" 2>&1 > /dev/null;echo $?`
+if [ $RET -eq 0 ]; then
+        systemctl stop $1-fpm.$2
+        systemctl disable $1-fpm.$2
+        rm -f /etc/$1-fpm.d/conf.d/${2}.conf
+        rm -f /etc/$1-fpm.d/www.${2}.conf
+        rm -f /usr/lib/systemd/system/$1-fpm.${2}.service
+elif [ -f "/usr/lib/systemd/system/$1-fpm.${2}.service" ]; then
+    systemctl disable $1-fpm.$2
+    rm -f /etc/$1-fpm.d/conf.d/${2}.conf
+    rm -f /etc/$1-fpm.d/www.${2}.conf
+    rm -f /usr/lib/systemd/system/$1-fpm.${2}.service
+fi
+}
+
+delete_hhvm_conf() {
+RET=`systemctl is-active hhvm.$1 | grep -w "active" 2>&1 > /dev/null;echo $?`
+if [ $RET -eq 0 ]; then
+        systemctl stop hhvm.$1
+        systemctl disable hhvm.$1
+        rm -f /etc/hhvm/conf.d/${1}.ini
+        rm -f /var/cache/hhvmd/$1.*
+        rm -f /etc/systemd/system/hhvm.${1}.service
+elif [ -f "/etc/systemd/system/hhvm.${1}.service" ] ; then
+        systemctl disable hhvm.$1
+    rm -f /etc/hhvm/conf.d/${1}.ini
+    rm -f /var/cache/hhvmd/$1.*
+    rm -f /etc/systemd/system/hhvm.${1}.service
+fi
+}
+
+
+
+bk_pass=`cat /usr/src/.bk_user_dwp`
+mysql -ubk_user -p$bk_pass kusanagi -e "select login_id from account" | tail -n +2 |\
+while read us; do
+	echo "---"$us
+	delete_php_conf php7 $us
+	delete_hhvm_conf $us
+done
+
+systemctl daemon-reload
