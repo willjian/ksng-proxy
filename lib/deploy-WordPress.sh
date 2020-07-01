@@ -45,8 +45,8 @@ function get_wp_plugin {
 		# get plugin download_link/version info from wordpress.org 
 		local WORKFILE="plugin.json"
 		wget -q -O ${WORKFILE} ${JSON_URL} 2> /dev/null
-		local URL=`php -r 'echo json_decode(fgets(STDIN))->download_link;' < ${WORKFILE}`
-		PLUGIN_VER=`php -r 'echo json_decode(fgets(STDIN))->version;' < ${WORKFILE}`
+		local URL=`php7 -r 'echo json_decode(fgets(STDIN))->download_link;' < ${WORKFILE}`
+		PLUGIN_VER=`php7 -r 'echo json_decode(fgets(STDIN))->version;' < ${WORKFILE}`
 		ZIP=`basename $URL`
 		wget -q -O /dev/null --spider $URL
 		if [ $? -eq 0 ] ; then
@@ -77,7 +77,7 @@ function get_woo_plugin {
 	cd $WORK
 	local PLUGIN_VER=
 	local URL="http://initial.secureweb.vn/woocommerce.zip"
-	PLUGIN_VER="4.0.1"
+	PLUGIN_VER="4.2.2"
 	ZIP=`basename $URL`
 	wget -q -O $ZIP $URL
 	unzip -q $ZIP
@@ -111,6 +111,7 @@ if [ $OPT_WOO ] ; then
 		# if [ $? -eq 0 ] ; then
 			# get version info
 			# SF_DOWNLOAD=`wget -q -O - --post-data $SF_POST $SF_URL | php -r 'echo unserialize(fgets(STDIN))->download_link;'`
+			#storefront.2.5.7
 			SF_DOWNLOAD="http://initial.secureweb.vn/storefront.zip"
 			SF_ZIP=storefront.zip
 			# wget -q -O /dev/null $SF_DOWNLOAD
