@@ -1,6 +1,6 @@
 ## virt.sh
-## K_remove "etc/monit.d/fqdn_httpd.conf" from ITEMS
-ITEMS=("etc/monit.d/fqdn_nginx.conf" "etc/nginx/conf.d/fqdn_http.conf" "etc/nginx/conf.d/fqdn_ssl.conf" "etc/httpd/conf.d/fqdn_http.conf etc/httpd/conf.d/fqdn_ssl.conf")
+#ITEMS=("etc/monit.d/fqdn_nginx.conf" "etc/nginx/conf.d/fqdn_http.conf" "etc/nginx/conf.d/fqdn_ssl.conf" "etc/httpd/conf.d/fqdn_http.conf etc/httpd/conf.d/fqdn_ssl.conf")
+ITEMS=("etc/nginx/conf.d/fqdn_http.conf" "etc/nginx/conf.d/fqdn_ssl.conf")
 PROXY_CONF=("/etc/proxy/fqdn_http.conf.template" "/etc/proxy/fqdn_ssl.conf.template")
 #PROFILE="www"
 #FQDN="test.com"
@@ -95,15 +95,15 @@ sed -i "s/^\(127.0.0.1.*\)\$/\1 $FQDN $ADDFQDN/" /etc/hosts || \
  (sed "s/\(^127.0.0.1.*$\)/\1 $FQDN $ADDFQDN/" /etc/hosts > /tmp/hosts.$$ && \
   cat /tmp/hosts.$$ > /etc/hosts && /usr/bin/rm /tmp/hosts.$$)
 ##
-if [ "$APP" != "Rails" ] && [ "$APP" != "WordPress" ]; then
+#if [ "$APP" != "Rails" ] && [ "$APP" != "WordPress" ]; then
 #	if [ ! -f "/etc/systemd/system/hhvm.${CUSTOM_USER}.service" ]; then
 #		/usr/src/create-hhvm-ini -d $CUSTOM_USER -u $CUSTOM_USER
 #	elif [ `systemctl is-active hhvm.${CUSTOM_USER} | grep ^active 2>&1 >/dev/null;echo $?` -gt 0 ]; then 
 #	    systemctl start hhvm.${CUSTOM_USER}
 #		systemctl enable hhvm.${CUSTOM_USER}
 #	fi
-	echo ""
-fi
+#	echo ""
+#fi
 ## K_Add backup command for this provision
 echo "/usr/src/backup -u $CUSTOM_USER -d $PROFILE" >> /etc/cron.daily/backup-prov
 echo "/usr/src/cleanup-bk -u $CUSTOM_USER -d $PROFILE" >> /etc/cron.weekly/cleanbk-prov
