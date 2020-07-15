@@ -28,10 +28,10 @@ cleanup() {
 	dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
 	log_archive="/var/log/${_doma}/archive_bk.log"
 	echo "Cleanup ${_user}: ${_doma}"
-	duplicity remove-older-than 10D $dest_url --force >> $log_archive
+	duplicity remove-older-than 7D $dest_url --force >> $log_archive
 
-	## remove sql tar file older than 1 month on swift
-	threshold=1555200
+	## remove sql tar file older than 12D on swift
+	threshold=1036800
 	alive=$(check_alive_token)
 	[ $alive -eq 0 ] && $get_token
 	$get_detail -c sqlbackup?prefix=${srv_hostname}/${_user}/${_doma} | jq '.name' | tr -d '\"' |\

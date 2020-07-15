@@ -51,7 +51,7 @@ backup() {
 	log_archive="/var/log/${_DOMA}/archive_bk.log"
 	last_log="/var/log/${_DOMA}/last_bk.log"
 	error_log="/var/log/${_DOMA}/error_bk.log"
-	duplicity --full-if-older-than=10D --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
+	duplicity --full-if-older-than=7D --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
 	RETVAL=$?
 
 	## backup db to gfs and swift
