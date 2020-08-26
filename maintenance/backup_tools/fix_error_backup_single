@@ -1,7 +1,6 @@
 #!/bin/bash
 
-usage()
-{
+usage() {
 	echo $0 -u user -p provision_name
 	exit 1
 }
@@ -63,7 +62,7 @@ fix_backup() {
 		fi
 	done
 	rm -f $result
-	/usr/src/backup -u $1 -d $2
+	#/usr/src/backup -u $1 -d $2
 	/usr/src/cleanup-bk -u $1 -d $2
 }
 

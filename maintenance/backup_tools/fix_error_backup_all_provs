@@ -1,6 +1,6 @@
 #!/bin/bash
-main()
-{
+main() {
+base_dir="/opt/maintenance/backup_tools"
 /usr/src/get_token
 cat error_backup.txt |\
 while read line; do
@@ -9,10 +9,10 @@ while read line; do
 	exist=`echo $line |grep 'does not exist' > /dev/null 2>&1;echo $?`
 	if [ 0 -eq $exist ]; then
 		echo "$user_---$prov_---doesnt exist"
-		/opt/maintenance/backup_tools/delete-death-backup-provision-single $user_ $prov_
+		${base_dir}/delete-death-backup-provision-single $user_ $prov_
 	else
 		echo "$user_---$prov_"
-		/opt/maintenance/backup_tools/fix_error_backup_single  -u $user_ -p $prov_
+		${base_dir}/fix_error_backup_single  -u $user_ -p $prov_
 	fi
 done
 }

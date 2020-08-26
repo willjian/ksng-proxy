@@ -12,7 +12,9 @@ while read line; do
 	if [ ! -z $user_ ]; then
 		if [ ! -d "/home/$user_/$prov/" ]; then
 			echo $user_":"$prov":does not exist" >> $log
-			sed -i '/-d '$prov'$/d' /etc/cron.daily/backup-prov
+			prov_=`echo $prov | sed 's/\./\\\./'g`
+			sed -i '/-d '$prov_'$/d' /etc/cron.daily/backup-prov
+			sed -i '/-d '$prov_'$/d' /etc/cron.weekly/cleanbk-prov
 		else
 			duplicity --no-encryption verify file:///backup/$srv/$user_/$prov /home/$user_/$prov > /dev/null 2>&1
 			if [ 0 -lt $? ]; then
