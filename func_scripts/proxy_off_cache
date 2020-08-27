@@ -1,0 +1,43 @@
+#!/bin/bash
+
+base_dir=/etc/proxy
+cd $base_dir
+bk_pass=`cat /usr/src/.bk_user_dwp`
+get_fqdn() {
+	local prov=$1
+	prov_=`echo $prov | sed 's/\./\\\./g'`
+	grep $prov_ /etc/kusanagi.d/profile.conf | grep FQDN |awk -F '"' '{print $2}'
+}
+
+turn_off_cache() {
+	# $1 is provision name
+	local prov=$1
+	for i in http ssl
+	do
+		if [ -f "${prov}_$i.conf" ]; then
+		   sed -i 's/^.*\(proxy_cache.*$\)/\t#\1/' ${prov}_$i.conf
+		   sed -i 's/^.*\(add_header X-Proxy-Cache.*$\)/\t#\1/' ${prov}_$i.conf
+		   sed -i 's/^.*\(http_500 http_502.*$\)/\t#\1/' ${prov}_$i.conf
+		fi
+	done
+	# upload nginx
+	fqdn_=$(get_fqdn $prov)
+	echo "fqdn= $fqdn_"
+	/usr/src/upload_proxy_conf $fqdn_
+}
+
+main() {
+	local user_=$1
+	if [ ! -z $user_ ]; then
+		mysql -ubk_user -p$bk_pass kusanagi -e "select provision_name from provision where user_name='$user_'" | tail -n +2 |\
+		while read pp; do
+			kusanagi target $pp
+			kusanagi fcache clear
+			kusanagi fcache off
+			kusanagi bcache clear
+			kusanagi bcache off
+			turn_off_cache $pp
+		done
+	fi
+}
+main $1
