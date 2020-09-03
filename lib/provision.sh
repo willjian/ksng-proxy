@@ -320,10 +320,10 @@ function k_provision {
 		echo $(eval_gettext "Failed. Target directory already exists.")
 		return 1
 	fi
-	
+	local new_profile_=`echo $NEW_PROFILE | sed 's/\./\\\./g'`
 	if [ -f /etc/kusanagi.d/profile.conf ] && \
-			[ 0 -eq $(grep -w "^\[$NEW_PROFILE\]" /etc/kusanagi.d/profile.conf 2>&1 > /dev/null ; echo $?) ] ; then
-		echo $(eval_gettext "Failed. Profile name(NEW_PROFILE) is already use.") | sed "s|NEW_PROFILE|$NEW_PROFILE|"
+			[ 0 -eq $(grep -w "^\[$new_profile_\]" /etc/kusanagi.d/profile.conf 2>&1 > /dev/null ; echo $?) ] ; then
+		echo $(eval_gettext "Failed. Profile name(NEW_PROFILE) is already used.") | sed "s|NEW_PROFILE|$NEW_PROFILE|"
 		return 1
 	fi
 	

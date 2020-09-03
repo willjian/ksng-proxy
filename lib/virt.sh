@@ -130,6 +130,6 @@ if [ $RET -eq 0 ] ; then
 	echo "---- Reload services ----"
 	k_reload nginx httpd monit
 	sleep 1
-	k_monit_reloadmonitor
+	#k_monit_reloadmonitor
 fi
 

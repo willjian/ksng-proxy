@@ -103,8 +103,9 @@ function k_remove() {
 		rm -rf /var/log/${TARGET}
 	fi
 	# remove backup command
-	sed -i '/d '$TARGET'$/d' /etc/cron.daily/backup-prov
-	sed -i '/d '$TARGET'$/d' /etc/cron.weekly/cleanbk-prov
+	local target_=`echo $TARGET | sed 's/\./\\\./g'`
+	sed -i '/d '$target_'$/d' /etc/cron.daily/backup-prov
+	sed -i '/d '$target_'$/d' /etc/cron.weekly/cleanbk-prov
 	# remove proxy configuration corresponding
 	rm -f /etc/proxy/${TARGET}"_"*
 	# remove proxy_id entry
@@ -146,7 +147,7 @@ function k_remove() {
 	if [ -n "${TARGET}" ] ; then
 		k_write_profile $TARGET '' remove
 		if [ -f /etc/kusanagi.conf ] && \
-				[ 0 -eq $(grep $TARGET /etc/kusanagi.conf 2>&1 > /dev/null; echo $?) ] ; then
+				[ 0 -eq $(grep $target_ /etc/kusanagi.conf 2>&1 > /dev/null; echo $?) ] ; then
 			local LAST=$(awk '/^\[/ {gsub(/^\[|\]$/, ""); a=$0} END {print a}' /etc/kusanagi.d/profile.conf)
 			echo "PROFILE=\"$LAST\"" > /etc/kusanagi.conf
 		fi

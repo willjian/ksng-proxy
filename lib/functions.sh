@@ -34,12 +34,13 @@ function k_read_profile() {
 	PROFILE=$1
 	local DONTWRITE=${2:-}
 	local INIFILE=${3:-$PROFILECONF}
+	local profile_=`echo ${PROFILE} | sed 's/\./\\\./g'`
 	if [ -f $INIFILE ] ; then
 		# load from inifile
-		eval $(awk "/^\[.+\]/ {p = 0 } /^\[$PROFILE\]/ { p = 1 } p == 1" $INIFILE | \
+		eval $(awk "/^\[.+\]/ {p = 0 } /^\[$profile_\]/ { p = 1 } p == 1" $INIFILE | \
 			awk '$1 ~ /^.+=.+$/ {print $1} ')
 	fi
-	local CUSTOM_USER=`grep '\['$PROFILE'\]' $PROFILECONF -A 10 | grep KUSANAGI_USER | cut -d '"' -f2`
+	local CUSTOM_USER=`grep '\['$profile_'\]' $PROFILECONF -A 10 | grep KUSANAGI_USER | cut -d '"' -f2`
 	# set uninitialized value
 	local IS_WRITABLE=0
 	if [[ ! -v KUSANAGI_DIR ]] ; then
@@ -93,8 +94,9 @@ function k_write_profile() {
 	local REMOVE=${3:-no} # unless set no(default), remove PROFILE
 
 	local WORK=$(mktemp)
+	local profile_=`echo ${PROFILE} | sed 's/\./\\\./g'`
 	if [ -f $PROFILECONF ] ; then
-		awk "BEGIN { p = 1 } /^\[.+\]/ { p = 1 } /^\[$PROFILE\]/ { p = 0 } p == 1" $PROFILECONF > $WORK
+		awk "BEGIN { p = 1 } /^\[.+\]/ { p = 1 } /^\[$profile_\]/ { p = 0 } p == 1" $PROFILECONF > $WORK
 	fi
 
 	# do not remove $PROFILE
@@ -179,7 +181,7 @@ function k_nginx() {
 		systemctl stop httpd && systemctl disable httpd
 	fi
 	systemctl restart nginx && systemctl enable nginx
-	k_monit_reloadmonitor
+	#k_monit_reloadmonitor
 }
 
 function get_db_root_password() {
@@ -256,7 +258,7 @@ function k_httpd() {
 		systemctl stop nginx && systemctl disable nginx
 	fi
 	systemctl restart httpd && systemctl enable httpd
-	k_monit_reloadmonitor
+	#k_monit_reloadmonitor
 }
 
 #function k_phpfpm() {
@@ -535,7 +537,7 @@ function k_update() {
 			do
 				if [ 0 -eq $(k_is_enabled $i) ] ; then
 					$CMD --post-hook "systemctl reload $i"
-					k_monit_reloadmonitor
+					#k_monit_reloadmonitor
 					return
 				fi
 			done
@@ -547,17 +549,47 @@ function k_update() {
 	esac
 }
 
+function proxy_fcache() {
+	local base_dir="/etc/proxy"
+	case "${1}" in
+	on)
+		for i in http ssl
+		do
+		   if [ -f "$base_dir/${PROFILE}_${i}.conf" ]; then
+		      sed -i 's/^.*\(proxy_cache.*$\)/\t\1/' $base_dir/${PROFILE}_${i}.conf
+			  sed -i 's/^.*\(add_header X-Proxy-Cache.*$\)/\t\1/' $base_dir/${PROFILE}_${i}.conf
+			  sed -i 's/^.*\(http_500 http_502.*$\)/\t\t\1/' $base_dir/${PROFILE}_${i}.conf
+		   fi
+		done
+		/usr/src/upload_proxy_conf $KUSANAGI_FQDN
+	;;
+	off)
+		for i in http ssl
+		do
+		   if [ -f "$base_dir/${PROFILE}_${i}.conf" ]; then
+		      sed -i 's/^.*\(proxy_cache.*$\)/\t#\1/' $base_dir/${PROFILE}_${i}.conf
+			  sed -i 's/^.*\(add_header X-Proxy-Cache.*$\)/\t#\1/' $base_dir/${PROFILE}_${i}.conf
+			  sed -i 's/^.*\(http_500 http_502.*$\)/\t\t#\1/' $base_dir/${PROFILE}_${i}.conf
+		   fi
+		done
+		/usr/src/upload_proxy_conf $KUSANAGI_FQDN
+	;;
+	esac
+}
+
 function k_fcache() {
 	case "${2}" in
 
 	on)
 		echo $(eval_gettext "Turning on")
 		sed -i "s/set\s*\$do_not_cache\s*1\s*;\s*#\+\s*page\s*cache/set \$do_not_cache 0; ## page cache/" $NGINX_HTTP &&sed -i "s/set\s*\$do_not_cache\s*1\s*;\s*#\+\s*page\s*cache/set \$do_not_cache 0; ## page cache/" $NGINX_HTTPS
+		proxy_fcache on
 	;;
 	off)
 		echo $(eval_gettext "Turning off")
 		sed -i "s/set\s*\$do_not_cache\s*0\s*;\s*#\+\s*page\s*cache/set \$do_not_cache 1; ## page cache/" $NGINX_HTTP
 		sed -i "s/set\s*\$do_not_cache\s*0\s*;\s*#\+\s*page\s*cache/set \$do_not_cache 1; ## page cache/" $NGINX_HTTPS
+		proxy_fcache off
 	;;
 	clear)
 		if [ -d $NGINX_CACHE_DIR ]; then
