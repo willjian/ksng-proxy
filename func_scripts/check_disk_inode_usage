@@ -18,6 +18,7 @@ inode_usage() {
 
 srv_hostname=`hostname`
 log="/opt/total_user_disk_inode_usage.txt"
+domain_list="/opt/domain_list.txt"
 main() {
 	mysql -u bk_user -p$bk_Passw0rd kusanagi -e "select concat_ws(',',login_id, name, phone, email, plan_id) from account" > $log
 	sed -i '/concat_ws/a login_id, name, phone, email, plan_id, host_name, disk_usage_percent, inode_usage_percent' $log
@@ -31,4 +32,13 @@ main() {
 	done
 }
 
-main
+#main
+get_domain_list() {
+	mysql -u bk_user -p$bk_Passw0rd kusanagi -e "select concat_ws(',', account.name, provision.user_name, provision.email, account.phone, provision.domain) from provision, account where account.login_id=provision.user_name" > $domain_list
+	sed -i '/concat_ws/a name, user_name, email, phone, domain, host_name' $domain_list
+	sed -i '/^name/! s/$/ , '$srv_hostname'/' $domain_list
+	sed -i '/concat_ws/d' $domain_list
+
+}
+
+get_domain_list
