@@ -1,0 +1,28 @@
+#!/bin/bash
+function usage() {
+   echo " Usage $0 -u user"
+   exit 1
+}
+while getopts u: OPT
+	do
+		case $OPT in
+		 "u" ) AMAN="$OPTARG" ;;
+		 "*" ) usage ;;
+		esac
+	done
+if [ -z ${AMAN} ]; then
+	usage
+fi
+archive_log="/root/.hungpham/userpass_list.log"
+if [ `grep $AMAN /etc/passwd >/dev/null 2>&1;echo $?` -eq 0 ]; then
+	# create a password
+	PASSWORD=`head /dev/urandom | tr -dc A-Za-z0-9 | head -c 12`
+	echo -e ""$PASSWORD"\n"$PASSWORD"\n" | passwd $AMAN
+	#cp  /root/.hungpham/userpass_list.log /backup/.userpass_list.log
+	OLD_PASS=`cat $archive_log | grep $AMAN":" | cut -d ":" -f2`
+	sed -i "s|$OLD_PASS|$PASSWORD|g" $archive_log
+	echo $?
+else
+	echo " User does not exist, please enter another one"
+	exit 1
+fi
