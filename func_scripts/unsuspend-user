@@ -19,20 +19,17 @@ GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
 
 status_check=`/usr/src/select_disable_account | grep ${USERNAME} > /dev/null 2>&1; echo $?`
 if [ $status_check -gt 0 ]; then
-	#echo "$USERNAME still active. Nothing to do"
 	mysql -p$GetP kusanagi -e "UPDATE account SET status = 1 WHERE login_id = '"$USERNAME"'"; echo $?
 	exit 0
 fi
 
 [ ! -f "/root/.tmp/unsuspend.log" ] && touch /root/.tmp/unsuspend.log
-grep $USERNAME /root/.tmp/suspend.log | cut -d "." -f1 | \
-while read i; do
-  if [ ! -z $i ]; then
+PHP=`cat/root/.tmp/suspend.log | grep $USERNAME | cut -d "." -f1`
+for i in $PHP; do
 	echo "$i.$USERNAME" >> /root/.tmp/unsuspend.log
 	/usr/src/create-$i-conf -d ${USERNAME} -u ${USERNAME}
 	systemctl start $i-fpm.$USERNAME
 	systemctl enable $i-fpm.$USERNAME
-  fi
 done
 
 mysql -p$GetP kusanagi -e "UPDATE account SET status = 1 WHERE login_id = '"$USERNAME"'"; echo $?
