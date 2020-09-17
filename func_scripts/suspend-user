@@ -15,18 +15,7 @@ while getopts u: OPT
 if [ -z ${USERNAME} ]; then
 	usage
 fi
-#config_check1=`ls /etc/php7-fpm.d/www.${USERNAME}.conf > /dev/null; echo $?`
-#if [ $config_check1 -gt 0 ]; then
-#echo "the config file do not exit"
-#exit 0
-#fi
-#systemctl stop php7-fpm.$USERNAME
-#systemctl disable php7-fpm.$USERNAME
-#mv -f /etc/php7-fpm.d/www.${USERNAME}.conf /etc/php7-fpm.d/www.${USERNAME}.conf.suspend
-#path=`ls /root/.tmp/suspend.log > /dev/null; echo $?`
-#if [ $path -gt 0 ]; then
-#    touch /root/.tmp/suspend.log
-#fi
+
 [ ! -f "/root/.tmp/suspend.log" ] && touch /root/.tmp/suspend.log
 sed -i '/'$USERNAME'/d' /root/.tmp/suspend.log
 for i in php php7 php71 php72 php73 php74
@@ -35,10 +24,11 @@ do
 		echo "$i.$USERNAME" >> /root/.tmp/suspend.log
 		systemctl stop $i-fpm.$USERNAME
 		systemctl disable $i-fpm.$USERNAME
-		mv -f /etc/$i-fpm.d/www.${USERNAME}.conf /etc/$i-fpm.d/www.${USERNAME}.conf.suspend
+		#mv -f /etc/$i-fpm.d/www.${USERNAME}.conf /etc/$i-fpm.d/www.${USERNAME}.conf.suspend
+		rm -f /etc/$i-fpm.d/www.${USERNAME}.conf
 	fi
 done
+
 GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
-#Delete Filerun
 mysql -p$GetP -h localhost kusanagi -e "UPDATE account SET status = 0 WHERE login_id = '"$USERNAME"'"
 echo $?

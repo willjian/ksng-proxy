@@ -14,23 +14,17 @@ while getopts u: OPT
 if [ -z ${USERNAME} ]; then
 	usage
 fi
-config_check=`/usr/src/select_disable_account | grep ${USERNAME} > /dev/null 2>&1; echo $?`
-if [ $config_check -gt 0 ]; then
-	#echo "the config suspend file do not exit"
-	echo "$USERNAME still active. Nothing to do"
+
+GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
+
+status_check=`/usr/src/select_disable_account | grep ${USERNAME} > /dev/null 2>&1; echo $?`
+if [ $status_check -gt 0 ]; then
+	#echo "$USERNAME still active. Nothing to do"
+	mysql -p$GetP kusanagi -e "UPDATE account SET status = 1 WHERE login_id = '"$USERNAME"'"; echo $?
 	exit 0
 fi
-#/usr/src/create-php7-conf -d ${USERNAME} -u ${USERNAME}
-#systemctl start php7-fpm.$USERNAME
-#systemctl enable php7-fpm.$USERNAME
-#path=`ls /root/.tmp/unsuspend.log > /dev/null; echo $?`
-#if [ $path -gt 0 ]; then
-#    touch /root/.tmp/unsuspend.log
-#	fi
+
 [ ! -f "/root/.tmp/unsuspend.log" ] && touch /root/.tmp/unsuspend.log
-#PHP=`cat /root/.tmp/suspend.log | grep $USERNAME | cut -d "." -f1`
-#echo "$PHP".$USERNAME >> /root/.tmp/unsuspend.log
-#for i in $PHP
 grep $USERNAME /root/.tmp/suspend.log | cut -d "." -f1 | \
 while read i; do
   if [ ! -z $i ]; then
@@ -40,6 +34,5 @@ while read i; do
 	systemctl enable $i-fpm.$USERNAME
   fi
 done
-GetP=`cat /usr/src/.lifesafty_cPanel | head -c 24`
-#Delete Filerun
+
 mysql -p$GetP kusanagi -e "UPDATE account SET status = 1 WHERE login_id = '"$USERNAME"'"; echo $?
