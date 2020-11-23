@@ -12,6 +12,13 @@ create_log_dir() {
 	mkdir /home/$AMAN/log/$1
 	mkdir /home/$AMAN/log/$1/session
     mkdir /home/$AMAN/log/$1/wsdlcache
+
+	chown $AMAN:$AMAN /home/$AMAN/log/$1
+	chown root:$AMAN /home/$AMAN/log/$1/session
+	chown $AMAN:$AMAN /home/$AMAN/log/$1/wsdlcache
+	chmod 775 /home/$AMAN/log/$1/session
+	touch /home/$AMAN/log/$1/session/.protected
+	chattr +i /home/$AMAN/log/$1/session/.protected
 }
 
 while getopts u:p: OPT
@@ -53,43 +60,19 @@ else
 	echo "$AMAN:$PASSWORD" >> /root/.hungpham/userpass_list.log
 	echo -e "$PASSWORD\n$PASSWORD\n" | passwd $AMAN
 
-	# create php7-fpm configuration 
 	mkdir /home/${AMAN}/log
+	chown root:root /home/${AMAN}/log
 	create_log_dir php7
 	create_log_dir php-fpm
 	for i in php php71 php72 php73 php74
 	do
 		/usr/src/create-${i}-conf -d $AMAN -u $AMAN
 	done
-	chown -R $AMAN:$AMAN /home/${AMAN}/log
-
-	# create FileManager
-	mkdir -p /home/$AMAN/.FileManager
-	unzip -qq -d /home/$AMAN/.FileManager /usr/src/cPanel/FileManager_source/Webmaster_Filerun_sample.zip
-	cat <<EOT > /home/$AMAN/.FileManager/system/data/autoconfig.php
-<?php
-\$config['db'] = array (
-	'type' => 'null',
-	'server' => 'localhost',
-	'database' => 'Filerun_${AMAN}_db',
-	'username' => 'Filerun_${AMAN}_user',
-	'password' => '$FileP',
-);
-EOT
-	echo "$FileP" | cat > /home/$AMAN/.FileManager/system/data/lifeconfig
-	chmod 400 /home/$AMAN/.FileManager/system/data/lifeconfig
-	chown -R $AMAN:$AMAN /home/$AMAN/.FileManager/
+	
+	source /usr/src/common_function
+	create_fr $AMAN
+	
 	sed -i "/kusanagilifesafe_user/a\    'deny Filerun_${AMAN}_user from all'," /usr/share/mysqlmanager/config.inc.php
-	mysql -p$GetP -e "drop database if exists Filerun_"$AMAN"_db"
-	mysql -p$GetP -e "create database Filerun_"$AMAN"_db"
-	mysql -p$GetP -e "create user 'Filerun_"$AMAN"_user'@'%' identified with mysql_native_password;"
-	mysql -p$GetP -e "set old_passwords = 0;"
-	mysql -p$GetP -e "set password for 'Filerun_"$AMAN"_user'@'%' = password('$FileP')"
-	mysql -p$GetP -e "grant all privileges on Filerun_"$AMAN"_db.* to 'Filerun_"$AMAN"_user'@'%'"
-	mysql -p$GetP -e "flush privileges"
-	mysql -p$GetP Filerun_"$AMAN"_db < /usr/src/cPanel/FileManager_source/Filerun_webmaster_db.sql
-    mysql -p$GetP Filerun_"$AMAN"_db -e "UPDATE df_users SET username = '"$AMAN"'"
-	#echo "$AMAN" $?
 	echo -e "/usr/src/clean_Filerundb -u $AMAN" >> /usr/src/clean-Filerun
 	# set disk quota
 	xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home

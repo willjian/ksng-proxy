@@ -1,0 +1,36 @@
+#!
+
+function create_fr() {
+		[ -d "/home/${1}/.FileManager" ] && rm -rf /home/${1}/.FileManager
+        mkdir /home/${1}/.FileManager
+        unzip -qq -d /home/${1}/.FileManager /usr/src/cPanel/FileManager_source/Webmaster_Filerun_sample.zip
+        cat <<EOT > /home/${1}/.FileManager/system/data/autoconfig.php
+<?php
+\$config['db'] = array (
+        'type' => 'null',
+        'server' => 'localhost',
+        'database' => 'Filerun_${1}_db',
+        'username' => 'Filerun_${1}_user',
+        'password' => '$FileP',
+);
+EOT
+        cat <<EOT > /home/${1}/.FileManager/customizables/config.php
+<?php
+\$config['app']['hidden_file_names'] = [];
+\$config['app']['hidden_file_names'][] = ".protected";
+EOT
+        echo "$FileP" > /home/${1}/.FileManager/system/data/lifeconfig
+        chmod 400 /home/${1}/.FileManager/system/data/lifeconfig
+        chown -R ${1}:${1} /home/${1}/.FileManager/
+
+        mysql -p$GetP -e "drop database if exists Filerun_"${1}"_db"
+        mysql -p$GetP -e "create database Filerun_"${1}"_db"
+        mysql -p$GetP -e "drop user Filerun_"${1}"_user"
+        mysql -p$GetP -e "create user 'Filerun_"${1}"_user'@'%' identified with mysql_native_password;"
+        mysql -p$GetP -e "set old_passwords = 0;"
+        mysql -p$GetP -e "set password for 'Filerun_"${1}"_user'@'%' = password('$FileP')"
+        mysql -p$GetP -e "grant all privileges on Filerun_"${1}"_db.* to 'Filerun_"${1}"_user'@'%'"
+        mysql -p$GetP -e "flush privileges"
+        mysql -p$GetP Filerun_"${1}"_db < /usr/src/cPanel/FileManager_source/Filerun_webmaster_db.sql
+        mysql -p$GetP Filerun_"${1}"_db -e "update df_users set username = '"${1}"'"
+}
