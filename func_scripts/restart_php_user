@@ -14,12 +14,4 @@ while getopts u: OPT
 if [ -z ${USERNAME} ]; then
 	usage
 fi
-#systemctl restart php7-fpm.$USERNAME
-#for i in php 
-#do
-#	if [ 0 -eq $(ls /etc/$i-fpm.d/conf.d/$USERNAME.conf > /dev/null; echo $?) ] ; then
-#				systemctl restart $i-fpm.$USERNAME; echo $?
-#														fi				
-#	done
-#exit 0
 kusanagi restart_php $USERNAME
