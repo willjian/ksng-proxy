@@ -324,12 +324,18 @@ function k_php_sw() {
 				systemctl stop ${i}-fpm.${user_} && systemctl disable ${i}-fpm.${user_}
 			fi
 		done
-		if [ ! -d "/home/${user_}/log/php7" ]; then
-			mkdir -p /home/${user_}/log/php7
-			mkdir /home/${user_}/log/php7/session
-			mkdir /home/${user_}/log/php7/wsdlcache
-			chown -R ${user_}.${user_} /home/${user_}/log
-		fi
+
+		[ ! -d "/home/${user_}/log" ] && mkdir /home/${user_}/log
+		[ ! -d "/home/${user_}/log/php7" ] && mkdir /home/${user_}/log/php7
+		[ ! -d "/home/${user_}/log/php7/session" ] && mkdir /home/${user_}/log/php7/session
+		[ ! -d "/home/${user_}/log/php7/wsdlcache" ] && mkdir /home/${user_}/log/php7/wsdlcache 
+		chown root:root /home/${user_}/log
+		chown ${user_}:${user_} /home/${user_}/log/php7
+		chown ${user_}:${user_} /home/${user_}/log/php7/wsdlcache
+		chown root:${user_} /home/${user_}/log/php7/session
+		[ ! -f "/home/${user_}/log/php7/session/.protected" ] && touch /home/${user_}/log/php7/session/.protected
+		chattr +i /home/${user_}/log/php7/session/.protected
+
 		systemctl restart ${php_ver}-fpm.${user_} && systemctl enable ${php_ver}-fpm.${user_}
 		sw_latest_selected_php_proc ${user_} ${php_ver}
 	fi
