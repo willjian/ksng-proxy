@@ -24,7 +24,7 @@ if [ $status_check -gt 0 ]; then
 fi
 
 [ ! -f "/root/.tmp/unsuspend.log" ] && touch /root/.tmp/unsuspend.log
-PHP=`cat/root/.tmp/suspend.log | grep $USERNAME | cut -d "." -f1`
+PHP=`cat /root/.tmp/suspend.log | grep $USERNAME | cut -d "." -f1`
 for i in $PHP; do
 	echo "$i.$USERNAME" >> /root/.tmp/unsuspend.log
 	/usr/src/create-$i-conf -d ${USERNAME} -u ${USERNAME}
