@@ -63,7 +63,7 @@ fix_backup() {
 	done
 	rm -f $result
 	#/usr/src/backup -u $1 -d $2
-	/usr/src/cleanup-bk -u $1 -d $2
+	#/usr/src/cleanup-bk -u $1 -d $2
 }
 
 fix_backup $user_ $prov_

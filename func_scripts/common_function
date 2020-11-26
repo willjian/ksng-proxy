@@ -34,3 +34,47 @@ EOT
         mysql -p$GetP Filerun_"${1}"_db < /usr/src/cPanel/FileManager_source/Filerun_webmaster_db.sql
         mysql -p$GetP Filerun_"${1}"_db -e "update df_users set username = '"${1}"'"
 }
+
+fix_backup() {
+	srv_hostname=`hostname`
+	dest_url="file:///backup/$srv_hostname/$1/$2"
+	src_dir="/home/$1/$2"
+	log="/backup/$srv_hostname/$1/$2/verify.log"
+	clean_log="/backup/$srv_hostname/$1/$2/clean.log"
+	result="/backup/$srv_hostname/$1/$2/result.log"
+	cd /backup/$srv_hostname/$1/$2
+
+	while [ 0 -lt $(duplicity --no-encryption verify $dest_url $src_dir > /dev/null 2>&1; echo $?) ]
+	do
+		duplicity --no-encryption verify $dest_url $src_dir 2>&1 | tee > $log
+		grep -E duplicity\-.*\.manifest $log | sed 's/.*\(duplicity\-.*\.manifest\)[^\.].*$/\1/' | uniq > $result
+		if [ -s $result ]; then
+			cat $result | while read manifest; do
+				echo "debug: manifest ---"$manifest
+				rm -f $manifest
+			done
+			duplicity --no-encryption cleanup $dest_url --force
+			duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee > $clean_log
+			cat $clean_log | grep -E 'duplicity\-.*sigtar.gz' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/' | uniq |\
+			while read sigtar; do
+				echo "debug: sigtar ---"$sigtar
+				rm -f $sigtar
+			done
+			duplicity --no-encryption cleanup $dest_url --force
+		else
+			echo "debug---No manifest error"
+			grep sigtar.gz $log | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'| uniq > $result
+			if [ ! -s $result ]; then
+				echo "Please check backup $1 $2 again. Maybe it has backed up yet"
+				break
+			else
+				cat $result | while read sigtar; do
+					echo "debug---"$sigtar
+					rm -f $sigtar
+				done
+				duplicity --no-encryption cleanup $dest_url --force
+			fi
+		fi
+	done
+	rm -f $result
+}

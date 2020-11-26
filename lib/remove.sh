@@ -105,7 +105,7 @@ function k_remove() {
 	# remove backup command
 	local target_=`echo $TARGET | sed 's/\./\\\./g'`
 	sed -i '/d '$target_'$/d' /etc/cron.daily/backup-prov
-	sed -i '/d '$target_'$/d' /etc/cron.weekly/cleanbk-prov
+	#sed -i '/d '$target_'$/d' /etc/cron.weekly/cleanbk-prov
 	# remove proxy configuration corresponding
 	rm -f /etc/proxy/${TARGET}"_"*
 	# remove proxy_id entry
