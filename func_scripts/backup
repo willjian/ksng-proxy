@@ -53,7 +53,7 @@ backup() {
 	error_log="/var/log/${_DOMA}/error_bk.log"
 
 	[ -f "/backup/$srv_hostname/${_USER}/${_DOMA}" ] && rm -f /backup/$srv_hostname/${_USER}/${_DOMA}
-	duplicity --full-if-older-than=5D --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
+	duplicity --full-if-older-than=4D --no-encryption --allow-source-mismatch --exclude-filelist $ignore_log $src_dir $dest_url > $last_log
 	RETVAL=$?
 
 	## backup db to gfs and swift
