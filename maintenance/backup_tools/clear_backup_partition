@@ -4,7 +4,7 @@ fix_errbackup() {
 	dest_url="file:///backup/$srv_hostname/${1}/${2}"
 	result="/tmp/result_bk.log"
 	clean_log="/tmp/clean.log"
-	cd /backup/$srv_hostname/$1/$2
+	dest_path="/backup/$srv_hostname/$1/$2"
 
 while [ 0 -lt $(duplicity remove-older-than 5D $dest_url --force > /tmp/clean_bk.log 2>&1;echo $?) ]
 do
@@ -12,14 +12,14 @@ do
 	if [ -s $result ]; then
 		cat $result | while read manifest; do
 			echo "debug: manifest ---"$manifest
-			rm -f $manifest
+			rm -f $dest_path/$manifest
 		done
 		duplicity --no-encryption cleanup $dest_url --force
 		duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee > $clean_log
 		cat $clean_log | grep -E 'duplicity\-.*sigtar.gz' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/' | uniq |\
 		while read sigtar; do
 			echo "debug: sigtar ---"$sigtar
-			rm -f $sigtar
+			rm -f $dest_path/$sigtar
 		done
 		duplicity --no-encryption cleanup $dest_url --force
 	else
@@ -31,28 +31,28 @@ do
 		else
 			cat $result | while read sigtar; do
 				echo "debug---"$sigtar
-				rm -f $sigtar
+				rm -f $dest_path/$sigtar
 			done
 			duplicity --no-encryption cleanup $dest_url --force
 		fi
 	fi
 done
-	rm -f $result
-
+	#rm -f $result
+	#rm -f $clean_log
 }
 
 clean_bk() {
-	local _user=$1
-	local _doma=$2
-	dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
-	dest_path="/backup/$srv_hostname/${_user}/${_doma}"
+	local us=$1
+	local prov=$2
+	dest_url="file:///backup/$srv_hostname/${us}/${prov}"
+	dest_path="/backup/$srv_hostname/${us}/${prov}"
 	if [ -d "$dest_path" ]; then
 		duplicity remove-older-than 5D $dest_url --force > /tmp/clean_bk.log 2>&1
 		if [ $? -gt 0 ]; then
-			fix_errbackup ${_user} ${_doma}
+			fix_errbackup $us $prov
 		fi
 		if [ 0 -eq $(grep "manually\s*purge" /tmp/clean_bk.log > /dev/null 2>&1;echo $?) ]; then
-			/opt/maintenance/backup_tools/delete-death-backup-provision-single $_user $_doma
+			/opt/maintenance/backup_tools/delete-death-backup-provision-single $us $prov
 		fi
 	fi
 }
