@@ -1,0 +1,81 @@
+#!/bin/bash
+
+fix_errbackup() {
+	dest_url="file:///backup/$srv_hostname/${1}/${2}"
+	result="/tmp/result_bk.log"
+	clean_log="/tmp/clean.log"
+	cd /backup/$srv_hostname/$1/$2
+
+while [ 0 -lt $(duplicity remove-older-than 5D $dest_url --force > /tmp/clean_bk.log 2>&1;echo $?) ]
+do
+	grep -E duplicity\-.*\.manifest /tmp/clean_bk.log | sed 's/.*\(duplicity\-.*\.manifest\)[^\.].*$/\1/' | uniq > $result
+	if [ -s $result ]; then
+		cat $result | while read manifest; do
+			echo "debug: manifest ---"$manifest
+			rm -f $manifest
+		done
+		duplicity --no-encryption cleanup $dest_url --force
+		duplicity --no-encryption cleanup $dest_url --force 2>&1 | tee > $clean_log
+		cat $clean_log | grep -E 'duplicity\-.*sigtar.gz' | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/' | uniq |\
+		while read sigtar; do
+			echo "debug: sigtar ---"$sigtar
+			rm -f $sigtar
+		done
+		duplicity --no-encryption cleanup $dest_url --force
+	else
+		echo "debug---No manifest error"
+		grep sigtar.gz /tmp/clean_bk.log | sed 's/.*\(duplicity.*sigtar\.gz\).*$/\1/'| uniq > $result
+		if [ ! -s $result ]; then
+			echo "Please check backup $1 $2 again. Maybe it has backed up yet"
+			break
+		else
+			cat $result | while read sigtar; do
+				echo "debug---"$sigtar
+				rm -f $sigtar
+			done
+			duplicity --no-encryption cleanup $dest_url --force
+		fi
+	fi
+done
+	rm -f $result
+
+}
+
+clean_bk() {
+	local _user=$1
+	local _doma=$2
+	dest_url="file:///backup/$srv_hostname/${_user}/${_doma}"
+	dest_path="/backup/$srv_hostname/${_user}/${_doma}"
+	if [ -d "$dest_path" ]; then
+		duplicity remove-older-than 5D $dest_url --force > /tmp/clean_bk.log 2>&1
+		if [ $? -gt 0 ]; then
+			fix_errbackup ${_user} ${_doma}
+		fi
+		if [ 0 -eq $(grep "manually\s*purge" /tmp/clean_bk.log > /dev/null 2>&1;echo $?) ]; then
+			/opt/maintenance/backup_tools/delete-death-backup-provision-single $_user $_doma
+		fi
+	fi
+}
+
+check_user_bk() {
+	#check bk of user does not longer exist
+	local us=$1
+	ls /backup/${srv_hostname}/$us |\
+	while read prov; do
+		echo $prov
+		clean_bk $us $prov
+	done
+}
+
+
+srv_hostname=`hostname`
+find /backup/${srv_hostname}/  -maxdepth 1 -type d | \
+while read line; do
+	user_=`echo $line | cut -d '/' -f4`
+	if [[ $user_ != *"backup"* ]]; then
+	    if [ ! -z $user_ ] && [ 0 -lt $(id $user_ > /dev/null 2>&1;echo $?) ]; then
+			echo "$user_ does not exist"
+			check_user_bk $user_
+		fi
+	fi
+done
