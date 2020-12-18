@@ -58,7 +58,7 @@ clean_bk() {
 }
 
 check_user_bk() {
-	#check bk of user does not longer exist
+	#check bk of user no longer exists
 	local us=$1
 	ls /backup/${srv_hostname}/$us |\
 	while read prov; do
@@ -76,6 +76,7 @@ while read line; do
 	    if [ ! -z $user_ ] && [ 0 -lt $(id $user_ > /dev/null 2>&1;echo $?) ]; then
 			echo "$user_ does not exist"
 			check_user_bk $user_
+			[ 0 -eq $(ls /backup/${srv_hostname}/$user_ | wc -l) ] && rm -rf /backup/${srv_hostname}/$user_
 		fi
 	fi
 done
