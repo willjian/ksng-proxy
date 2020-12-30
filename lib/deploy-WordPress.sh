@@ -27,6 +27,7 @@ cd /home/$CUSTOM_USER/$PROFILE/DocumentRoot
 #/usr/bin/wp core config --dbname="${DBNAME}" --dbuser="${DBUSER}" --dbpass="${DBPASS}" --dbhost=localhost --dbprefix="${PREFIX}_"
 #/usr/bin/wp core install --url="${FDQN}" --title="${BLOGNAME}" --admin_user="${BLOGADMIN}" --admin_password="${BLOGPASS}" --admin_email="${BLOGMAIL}"
 cp -rp /usr/lib/kusanagi/resource/DocumentRoot/* /home/$CUSTOM_USER/$PROFILE/DocumentRoot/
+[ -d "/home/$CUSTOM_USER/$PROFILE/DocumentRoot/wp-content/mu-plugins" ] && rm -rf /home/$CUSTOM_USER/$PROFILE/DocumentRoot/wp-content/mu-plugins
 cp -p /usr/lib/kusanagi/resource/DocumentRoot/.htaccess /home/$CUSTOM_USER/$PROFILE/DocumentRoot/
 cp -rp /usr/lib/kusanagi/resource/settings /home/$CUSTOM_USER/$PROFILE/
 cp -rp /usr/lib/kusanagi/resource/tools /home/$CUSTOM_USER/$PROFILE/
