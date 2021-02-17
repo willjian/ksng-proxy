@@ -57,6 +57,7 @@ clean_bk() {
 		if [ 0 -eq $(grep "manually\s*purge" /tmp/clean_bk.log > /dev/null 2>&1;echo $?) ]; then
 			/opt/maintenance/backup_tools/delete-death-backup-provision-single $us $prov
 		fi
+		[ -d "$dest_path" ] && [ 0 -eq $(ls $dest_path | wc -l) ] && rm -rf $dest_path
 	fi
 }
 
@@ -67,7 +68,6 @@ check_user_bk() {
 	while read prov; do
 		echo $prov
 		clean_bk $us $prov
-		[ 0 -eq $(ls /backup/${srv_hostname}/$us/$prov | wc -l) ] && rm -rf /backup/${srv_hostname}/$us/$prov
 	done
 }
 
