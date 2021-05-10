@@ -44,7 +44,7 @@ pkg[3]='Professional'
 bhard=${dquota[$PLAN]}
 let bsoft=bhard-100
 ihard=${iquota[$PLAN]}
-let isoft=ihard-10000
+let isoft=ihard-2000
 
 if [ `grep $AMAN /etc/passwd >/dev/null 2>&1;echo $?` -eq 0 ]; then
    	echo " User existed, please enter another one"

@@ -1,7 +1,6 @@
 #!/bin/bash
 
-function usage()
-{
+function usage() {
    echo " Usage $0 -u user -p plan_number"
    exit 1
 }
@@ -29,16 +28,14 @@ pkg[3]='Professional'
 bhard=${dquota[$PLAN]}
 let bsoft=bhard-100
 ihard=${iquota[$PLAN]}
-let isoft=ihard-10000
+let isoft=ihard-2000
 
 if [ `grep $AMAN /etc/passwd >/dev/null;echo $?` -eq 1 ]; then
    	echo " User does not exist"
 	exit 1
 else
-	# set disk quota
 	xfs_quota -x -c 'limit bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
 	xfs_quota -x -c 'limit -g bsoft='$bsoft'm bhard='$bhard'm '$AMAN'' /home
-	# set inode quota
 	xfs_quota -x -c 'limit isoft='$isoft' ihard='$ihard' '$AMAN'' /home
 	xfs_quota -x -c 'limit -g isoft='$isoft' ihard='$ihard' '$AMAN'' /home
 	exit 0
