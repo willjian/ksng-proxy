@@ -1,0 +1,63 @@
+#!/bin/bash
+
+CPU_LOAD=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}' | cut -d "." -f1)
+CPU_THRESHOLD=50
+
+CHECKMAILP=$(ps aux | grep -v 'kusanagi\|root\|polkitd\|dbus\|mysql\|zabbix\|chrony\|sshd' | grep "python" > /dev/null 2>&1; echo $?)
+
+if [ $CHECKMAILP -eq 0 ] ; then
+	LIST_PID=$(ps aux | grep -v 'kusanagi\|root\|polkitd\|dbus\|mysql\|zabbix\|chrony\|sshd' | grep "python" | awk '{print $2}')
+	LIST_USER=$(ps aux | grep -v 'kusanagi\|root\|polkitd\|dbus\|mysql\|zabbix\|chrony\|sshd' | grep "python" | awk '{print $1}')
+	HOST=`hostname -f`
+	DATE=`date`
+	echo "[python] $HOST $DATE $LIST_USER" >> /backup/cpu_monitor.log
+	#Limit_lve`
+	echo $LIST_USER | xargs -I{} bash -c '/usr/src/update_lve_package -u {} -p 0;'
+	echo $LIST_PID | xargs -I{} bash -c 'kill -9 {};'
+	echo $LIST_USER | xargs -I{} bash -c '/usr/src/restart_php_user -u {};'
+fi	
+
+if [ $CPU_LOAD -lt $CPU_THRESHOLD ] ; then
+	CHECKSTEALTH=$(ps aux | sort -nrk 3,3 | grep "stealth" | grep -v 'polkitd\|chrony\|dbus\|root\|mysql\|kusanagi\|zabbix\|sshd')
+	if [ -z "${CHECKSTEALTH}" ] ; then
+		CHECKEXIM=$(ps aux | sort -nrk 3,3 | grep "exim" | grep -v 'polkitd\|chrony\|dbus\|root\|mysql\|kusanagi\|zabbix\|sshd')
+		if [ ! -z "${CHECKEXIM}" ] ; then
+			PID_STEALTH=$(echo "$CHECKEXIM" | awk '{print $2}')
+			PATH_PID_STEALTH=$(ls -l /proc/$PID_STEALTH/exe)
+			HOST=`hostname -f`
+			DATE=`date`
+			echo "[exim] $HOST $DATE $PATH_PID_STEALTH" >> /backup/cpu_monitor.log
+			USERLVE=`echo $CHECKEXIM | awk '{print $1}'`
+			/usr/src/update_lve_package -u $USERLVE -p 0
+			kill -9 $PID_STEALTH;  /usr/src/restart_php_user -u $USERLVE
+		fi
+	else
+		PID_STEALTH=$(echo "$CHECKSTEALTH" | awk '{print $2}')
+		PATH_PID_STEALTH=$(ls -l /proc/$PID_STEALTH/exe)
+		HOST=`hostname -f`
+		DATE=`date`
+		echo "[stealth] $HOST $DATE $PATH_PID_STEALTH" >> /backup/cpu_monitor.log
+		USERLVE=`echo $CHECKSTEALTH | awk '{print $1}'`
+		/usr/src/update_lve_package -u $USERLVE -p 0
+		kill -9 $PID_STEALTH; /usr/src/restart_php_user -u $USERLVE
+	fi
+else
+	echo "high load cpu - restart nginx service"
+	systemctl restart nginx
+	TOPPROCESS=$(top -bn1 | tail -n +8 | grep -v 'polkitd\|chrony\|dbus\|root\|mysql\|kusanagi\|zabbix\|sshd' | head -n 1) 
+	if [ ! -z "${TOPPROCESS}" ] ; then
+		CPUTOP=$(echo $TOPPROCESS | awk '{print $9}' | cut -d "." -f1)
+		if [ $CPUTOP -gt 99 ] ; then
+			TOPPID=`echo $TOPPROCESS | awk '{print $1}'`
+			HOST=`hostname -f`
+			DATE=`date`
+			PATHPID=`ls -l /proc/$TOPPID/exe`
+			echo "$HOST $DATE PATH:$PATHPID RESTART PID ($TOPPID) AT CPU ($CPU_LOAD) : $TOPPROCESS" >> /backup/cpu_monitor.log
+			USERLVE=`echo $TOPPROCESS | awk '{print $2}'`
+			/usr/src/update_lve_package -u $USERLVE -p 0
+			#kill -9 $TOPPID
+			/usr/src/restart_php_user -u $USERLVE
+		fi
+	fi
+fi
+exit 0
