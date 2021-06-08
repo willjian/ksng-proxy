@@ -1,21 +1,31 @@
 #!/bin/bash
 
 port_=9090
-check_ssh_con()
-{
-if [ 255 -eq $(ssh -p $port_ -q $1 exit;echo $?) ]; then
-	echo " Cannot SSH to remote server $1 via port $port_"
-	exit 1
-fi
+declare -A local_arrayIP
+local_arrayIP=( \
+["cnode001.seolover.cloud"]=10.0.0.6 \
+["cnode003.seolover.cloud"]=10.0.0.15 \
+["cnode005.seolover.cloud"]=10.0.0.20 \
+["cnode009.seolover.cloud"]=10.0.0.31 \
+["cnode011.seolover.cloud"]=10.0.0.39 \
+["znode002.seolover.cloud"]=10.0.0.11 \
+["znode004.seolover.cloud"]=10.0.0.18 \
+)
+
+check_ssh_con() {
+	local dest_srv=${local_arrayIP[$1]}
+	if [ 255 -eq $(ssh -p $port_ -q ${dest_srv} exit;echo $?) ]; then
+		echo " Cannot SSH to remote server $1 via port $port_"
+		exit 1
+	fi
 }
 
-check_cert_existed()
-{
+check_cert_existed() {
 	fqdn_=$(get_fqdn_proc $1)
     if [ -f "/etc/pki/tls/certs/${fqdn_}.crt" ]; then echo 1; else echo 0; fi
 }
-check_lets_existed()
-{
+
+check_lets_existed() {
 	fqdn_=$(get_fqdn_proc $1)
     if [ -d "/etc/letsencrypt/archive/${fqdn_}" ]; then 
 		echo 1
@@ -28,52 +38,60 @@ check_lets_existed()
 	fi
 }
 
-get_fqdn_proc()
-{
-    grep "\[$1\]" /etc/kusanagi.d/profile.conf -A 3 | grep FQDN | cut -d '"' -f2
+get_fqdn_proc(){
+	prov_=`echo ${1} | sed 's/\./\\\./'g`
+    grep "\[${prov_}\]" /etc/kusanagi.d/profile.conf -A 3 | grep FQDN | cut -d '"' -f2
 }
 
-proxy_prepare()
-{
-declare -A arrayIP
-arrayIP=( ["f-host001.tenten.cloud"]=150.95.16.123 ["f-host002.tenten.cloud"]=150.95.113.25 ["f-host003.tenten.cloud"]=150.95.16.123 )
-remote_ip=${arrayIP[$2]}
-local srv=`hostname`
-local_ip=${arrayIP[$srv]}
-sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_http.conf > /opt/migrate/departure/${1}_http.conf
-sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_ssl.conf > /opt/migrate/departure/${1}_ssl.conf
+proxy_prepare() {
+	declare -A arrayIP
+	arrayIP=( \
+["cnode001.seolover.cloud"]=150.95.16.38 \
+["cnode003.seolover.cloud"]=150.95.116.18 \
+["cnode005.seolover.cloud"]=150.95.16.55 \
+["cnode009.seolover.cloud"]=150.95.116.47 \
+["cnode011.seolover.cloud"]=150.95.116.62 \
+["znode002.seolover.cloud"]=150.95.116.40 \
+["znode004.seolover.cloud"]=150.95.116.42 \
+)
+	remote_ip=${arrayIP[$2]}
+	local srv=`hostname -f`
+	local_ip=${arrayIP[$srv]}
+	sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_http.conf > /opt/migrate/departure/${1}_http.conf
+	sed 's/'$local_ip'/'$remote_ip'/'g /etc/proxy/${1}_ssl.conf > /opt/migrate/departure/${1}_ssl.conf
 }
-rsync_procedure()
-{
+
+rsync_procedure() {
+local dest_srv=${local_arrayIP[$2]}
 if [ 1 -eq $(check_cert_existed $1) ]; then
 	fqdn_=$(get_fqdn_proc $1)
-	rsync -avzh -e 'ssh -p '$port_'' /etc/pki/tls/certs/${fqdn_}* ${2}:/etc/pki/tls/certs/ 2>&1 > /dev/null
-	rsync -avzh -e 'ssh -p '$port_'' /etc/pki/tls/private/${fqdn_}* ${2}:/etc/pki/tls/private/ 2>&1 > /dev/null
+	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/certs/${fqdn_}* ${dest_srv}:/etc/pki/tls/certs/ 2>&1 > /dev/null
+	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/private/${fqdn_}* ${dest_srv}:/etc/pki/tls/private/ 2>&1 > /dev/null
 fi
 
 if [ 1 -eq $(check_lets_existed $1) ]; then
 	fqdn_=$(get_fqdn_proc $1)
 	if [ -d "/etc/letsencrypt/archive/${fqdn_}" ]; then
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/live/${fqdn_} ${2}:/etc/letsencrypt/live/ 2>&1 > /dev/null
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/archive/${fqdn_} ${2}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_} ${dest_srv}:/etc/letsencrypt/live/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_} ${dest_srv}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
 	fi
 	if [ 0 -eq $(ls /etc/letsencrypt/archive/${fqdn_}-* > /dev/null 2>&1;echo $?) ]; then
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/live/${fqdn_}-* ${2}:/etc/letsencrypt/live/ 2>&1 > /dev/null
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/archive/${fqdn_}-* ${2}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/live/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
 	fi
 	if [ -f "/etc/letsencrypt/renewal/${fqdn_}.conf" ]; then
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/renewal/${fqdn_}.conf ${2}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}.conf ${dest_srv}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
 		mv -f /etc/letsencrypt/renewal/${fqdn_}.conf /opt/maintenance/lets_tools/recycle_bin/
 	fi
 	if [ 0 -eq  $(ls /etc/letsencrypt/renewal/${fqdn_}-*.conf >/dev/null 2>&1;echo $?) ]; then
-		rsync -avzh -e 'ssh -p '$port_'' /etc/letsencrypt/renewal/${fqdn_}-*.conf ${2}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}-*.conf ${dest_srv}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
 		mv -f /etc/letsencrypt/renewal/${fqdn_}-*.conf /opt/maintenance/lets_tools/recycle_bin/
 	fi
 fi
 #proxy_prepare $1 $2
 #rsync -avzh -e 'ssh -p '$port_'' /opt/migrate/departure/${1}_* ${2}:/home/proxy/ 2>&1 > /dev/null
-rsync -avzh -e 'ssh -p '$port_'' /etc/nginx/conf.d/${1}_* ${2}:/etc/nginx/conf.d/ 2>&1 > /dev/null
-rsync -avzh -e 'ssh -p '$port_'' /opt/migrate/departure/backup_path_${1}.log ${2}:/opt/migrate/arrival/ 2>&1 > /dev/null
+rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/nginx/conf.d/${1}_* ${dest_srv}:/etc/nginx/conf.d/ 2>&1 > /dev/null
+rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /opt/migrate/departure/backup_path_${1}.log ${dest_srv}:/opt/migrate/arrival/ 2>&1 > /dev/null
 ret=$?
 #rm -f /opt/migrate/departure/${1}_*
 if [ 1 -eq $ret ]; then
