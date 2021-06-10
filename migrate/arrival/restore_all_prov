@@ -1,7 +1,6 @@
 #!/bin/bash
 # restore all provisions
-func_usage()
-{
+func_usage() {
   echo " Usage: $0 -u user "
   exit 1
 }
@@ -16,8 +15,7 @@ if [ -z ${user_} ] ; then
     func_usage
 fi
 
-w3-date ()
-{
+w3-date () {
 declare -A arrayDate
 arrayDate=( ["Jan"]=01 ["Feb"]=02 ["Mar"]=03 ["Apr"]=04 ["May"]=05 ["Jun"]=06 ["Jul"]=07 ["Aug"]=08 ["Sep"]=09 ["Oct"]=10 ["Nov"]=11 ["Dec"]=12 )
 time_in_day=`echo $1 |cut -d '-' -f2`
@@ -34,8 +32,7 @@ passU=`cat /opt/migrate/departure/update_acc_passwd`
 source /opt/migrate/departure/rsync2
 source /opt/migrate/arrival/update_acme_acct_to_renewal_conf
 
-check_backup_file()
-{
+check_backup_file() {
 backup_list="/opt/migrate/arrival/backup_path_${1}.log"
 if [ -f $backup_list ]; then
 	dest_url=`cat $backup_list | cut -d ',' -f1`
@@ -46,8 +43,7 @@ else
 fi
 }
 
-restore_procedure()
-{
+restore_procedure() {
 today=`date +%Y-%m-%d-%H:%M:%S`
 src_dir="/home/${user_}/${1}"
 log_archive="/var/log/${1}/rest.log"
@@ -84,14 +80,13 @@ else
 fi
 }
 
-check_nginx_valid()
-{
+check_nginx_valid() {
     nginx -t > /dev/null 2>&1;echo $?
 }
 
-main()
-{
-	mysql -ubk_user -pbk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" | tail -n +2 |\
+main() {
+	bk_Passw0rd=`cat /usr/src/.bk_user_dwp`
+	mysql -ubk_user -p$bk_Passw0rd -e "select provision_name from kusanagi.provision where user_name = '$user_' and deactive_flg = 0" | tail -n +2 |\
 	while read prov; do
 		restore_procedure $prov
 		if [ 1 -eq $(check_lets_existed $prov) ]; then
