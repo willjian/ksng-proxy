@@ -40,7 +40,11 @@ check_lets_existed() {
 
 get_fqdn_proc(){
 	prov_=`echo ${1} | sed 's/\./\\\./'g`
-    grep "\[${prov_}\]" /etc/kusanagi.d/profile.conf -A 3 | grep FQDN | cut -d '"' -f2
+	if [ 0 -eq ($grep "\[${prov_}\]" /etc/kusanagi.d/profile.conf > /dev/null 2>&1; echo $?) ]; then
+    	grep "\[${prov_}\]" /etc/kusanagi.d/profile.conf -A 3 | grep FQDN | cut -d '"' -f2
+	else
+		awk -F'[ \t;]+' '/^[ \t]+server_name/ {printf "%s", $3}' /etc/nginx/conf.d/${1}_http.conf
+	fi
 }
 
 proxy_prepare() {
@@ -65,35 +69,35 @@ rsync_procedure() {
 local dest_srv=${local_arrayIP[$2]}
 if [ 1 -eq $(check_cert_existed $1) ]; then
 	fqdn_=$(get_fqdn_proc $1)
-	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/certs/${fqdn_}* ${dest_srv}:/etc/pki/tls/certs/ 2>&1 > /dev/null
-	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/private/${fqdn_}* ${dest_srv}:/etc/pki/tls/private/ 2>&1 > /dev/null
+	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/certs/${fqdn_}* ${dest_srv}:/etc/pki/tls/certs/
+	rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/pki/tls/private/${fqdn_}* ${dest_srv}:/etc/pki/tls/private/
 fi
 
 if [ 1 -eq $(check_lets_existed $1) ]; then
 	fqdn_=$(get_fqdn_proc $1)
 	if [ -d "/etc/letsencrypt/archive/${fqdn_}" ]; then
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_} ${dest_srv}:/etc/letsencrypt/live/ 2>&1 > /dev/null
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_} ${dest_srv}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_} ${dest_srv}:/etc/letsencrypt/live/
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_} ${dest_srv}:/etc/letsencrypt/archive/
 	fi
 	if [ 0 -eq $(ls /etc/letsencrypt/archive/${fqdn_}-* > /dev/null 2>&1;echo $?) ]; then
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/live/ 2>&1 > /dev/null
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/archive/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/live/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/live/
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/archive/${fqdn_}-* ${dest_srv}:/etc/letsencrypt/archive/
 	fi
 	if [ -f "/etc/letsencrypt/renewal/${fqdn_}.conf" ]; then
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}.conf ${dest_srv}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}.conf ${dest_srv}:/etc/letsencrypt/renewal/
 		mv -f /etc/letsencrypt/renewal/${fqdn_}.conf /opt/maintenance/lets_tools/recycle_bin/
 	fi
 	if [ 0 -eq  $(ls /etc/letsencrypt/renewal/${fqdn_}-*.conf >/dev/null 2>&1;echo $?) ]; then
-		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}-*.conf ${dest_srv}:/etc/letsencrypt/renewal/ 2>&1 > /dev/null
+		rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/letsencrypt/renewal/${fqdn_}-*.conf ${dest_srv}:/etc/letsencrypt/renewal/
 		mv -f /etc/letsencrypt/renewal/${fqdn_}-*.conf /opt/maintenance/lets_tools/recycle_bin/
 	fi
 fi
-#proxy_prepare $1 $2
-#rsync -avzh -e 'ssh -p '$port_'' /opt/migrate/departure/${1}_* ${2}:/home/proxy/ 2>&1 > /dev/null
-rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/nginx/conf.d/${1}_* ${dest_srv}:/etc/nginx/conf.d/ 2>&1 > /dev/null
-rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /opt/migrate/departure/backup_path_${1}.log ${dest_srv}:/opt/migrate/arrival/ 2>&1 > /dev/null
+proxy_prepare $1 $2
+rsync -azhe 'ssh -p '$port_'-o StrictHostKeyChecking=no' /opt/migrate/departure/${1}_* ${dest_srv}:/home/proxy/
+rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /etc/nginx/conf.d/${1}_* ${dest_srv}:/etc/nginx/conf.d/
+rsync -azhe 'ssh -p '$port_' -o StrictHostKeyChecking=no' /opt/migrate/departure/backup_path_${1}.log ${dest_srv}:/opt/migrate/arrival/
 ret=$?
-#rm -f /opt/migrate/departure/${1}_*
+rm -f /opt/migrate/departure/${1}_*
 if [ 1 -eq $ret ]; then
 	echo " Rsync error"
 #	exit 1
