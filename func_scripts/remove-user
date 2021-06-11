@@ -56,13 +56,13 @@ do
 done
 systemctl daemon-reload
 
-#Delete user from account table
+# remove user from account table
 mysql -p$GetP kusanagi -e "DELETE FROM account WHERE login_id = '"$USERNAME"'"
 echo "Drop Userdb" $?
-#Delete_provision
-/usr/src/remove_all_provision -u $USERNAME;echo $?
-echo "Drop ALL Provision" $?
-#Delete Filerun
+# remove all provisions
+/usr/src/rm_user_provs $USERNAME
+echo "Remove all provisions $?"
+# drop Filerun db
 sed -i "/$USERNAME/d" /usr/src/clean-Filerun
 mysql -p$GetP -e "DROP DATABASE IF EXISTS Filerun_"$USERNAME"_db"
 echo "Drop Filerun_"$USERNAME"_db $?"

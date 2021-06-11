@@ -3,8 +3,7 @@
 log=/usr/src/cPanel/Log/del_provision_log
 pwrd=`cat /usr/src/.lifesafty_cPanel | head -c 24`
 
-delete_prov()
-{
+delete_prov() {
 	if [ 0 -lt $(id ${1} > /dev/null 2>&1;echo $?) ] || [ -z ${1} ]; then
 		echo "No such user"
 		exit 1
