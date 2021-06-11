@@ -75,6 +75,8 @@ sed -i '/'$uid'/d' /etc/container/dbuser-map
 
 # remove from lvectl
 lvectl destroy $uid
+
+for i in php-fpm php7; do chattr -i /home/$USERNAME/log/$i/session/.protected; done
 userdel --remove $USERNAME 
 sed -i '/'$USERNAME':/d' /root/.hungpham/userpass_list.log
 sed -i '/'$uid'/d' /var/superpanel/user_package
