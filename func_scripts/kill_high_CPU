@@ -44,7 +44,6 @@ if [ $CPU_LOAD -lt $CPU_THRESHOLD ] ; then
 else
 	echo `hostname -f`" high load cpu $CPU_LOAD - restart nginx service "`date` >> /backup/cpu_monitor.log
 	systemctl restart nginx
-	/etc/cron.daily/restart_all_phpuser
 	TOPPROCESS=$(top -bn1 | tail -n +8 | grep -v 'polkitd\|chrony\|dbus\|root\|mysql\|kusanagi\|zabbix\|sshd' | head -n 1) 
 	if [ ! -z "${TOPPROCESS}" ] ; then
 		CPUTOP=$(echo $TOPPROCESS | awk '{print $9}' | cut -d "." -f1)
@@ -60,5 +59,6 @@ else
 			/usr/src/restart_php_user -u $USERLVE
 		fi
 	fi
+	/etc/cron.daily/restart_all_phpuser
 fi
 exit 0
