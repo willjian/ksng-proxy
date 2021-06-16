@@ -55,7 +55,7 @@ else
 			USERLVE=`echo $TOPPROCESS | awk '{print $2}'`
 			/usr/src/update_lve_package -u $USERLVE -p 0
 			#kill -9 $TOPPID
-			/usr/src/restart_php_user -u $USERLVE
+			[ $CPUTOP -gt 100 ] && /usr/src/restart_php_user -u $USERLVE
 		fi
 	fi
 	systemctl restart nginx
