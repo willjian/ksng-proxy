@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cpu_log="/backup/cpu_monitor.log"
 CPU_LOAD=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}' | cut -d "." -f1)
 CPU_THRESHOLD=80
 
@@ -10,7 +11,7 @@ if [ $CHECKMAILP -eq 0 ] ; then
 	LIST_USER=$(ps aux | grep -v 'kusanagi\|root\|polkitd\|dbus\|mysql\|zabbix\|chrony\|sshd' | grep "python" | awk '{print $1}')
 	HOST=`hostname -f`
 	DATE=`date`
-	echo "[python] $HOST $DATE $LIST_USER" >> /backup/cpu_monitor.log
+	echo "[python] $HOST $DATE $LIST_USER" >> $cpu_log
 	#Limit_lve`
 	echo $LIST_USER | xargs -I{} bash -c '/usr/src/update_lve_package -u {} -p 0;'
 	echo $LIST_PID | xargs -I{} bash -c 'kill -9 {};'
@@ -26,7 +27,7 @@ if [ $CPU_LOAD -lt $CPU_THRESHOLD ] ; then
 			PATH_PID_STEALTH=$(ls -l /proc/$PID_STEALTH/exe)
 			HOST=`hostname -f`
 			DATE=`date`
-			echo "[exim] $HOST $DATE $PATH_PID_STEALTH" >> /backup/cpu_monitor.log
+			echo "[exim] $HOST $DATE $PATH_PID_STEALTH" >> $cpu_log
 			USERLVE=`echo $CHECKEXIM | awk '{print $1}'`
 			/usr/src/update_lve_package -u $USERLVE -p 0
 			kill -9 $PID_STEALTH;  /usr/src/restart_php_user -u $USERLVE
@@ -36,13 +37,13 @@ if [ $CPU_LOAD -lt $CPU_THRESHOLD ] ; then
 		PATH_PID_STEALTH=$(ls -l /proc/$PID_STEALTH/exe)
 		HOST=`hostname -f`
 		DATE=`date`
-		echo "[stealth] $HOST $DATE $PATH_PID_STEALTH" >> /backup/cpu_monitor.log
+		echo "[stealth] $HOST $DATE $PATH_PID_STEALTH" >> $cpu_log
 		USERLVE=`echo $CHECKSTEALTH | awk '{print $1}'`
 		/usr/src/update_lve_package -u $USERLVE -p 0
 		kill -9 $PID_STEALTH; /usr/src/restart_php_user -u $USERLVE
 	fi
 else
-	echo `hostname -f`" high load cpu $CPU_LOAD - restart nginx service "`date` >> /backup/cpu_monitor.log
+	echo `hostname -f`" high load cpu $CPU_LOAD "`date` >> $cpu_log
 	TOPPROCESS=$(top -bn1 | tail -n +8 | grep -v 'polkitd\|chrony\|dbus\|root\|mysql\|kusanagi\|zabbix\|sshd' | head -n 1) 
 	if [ ! -z "${TOPPROCESS}" ] ; then
 		CPUTOP=$(echo $TOPPROCESS | awk '{print $9}' | cut -d "." -f1)
@@ -51,14 +52,14 @@ else
 			HOST=`hostname -f`
 			DATE=`date`
 			PATHPID=`ls -l /proc/$TOPPID/exe`
-			echo "$HOST $DATE PATH:$PATHPID RESTART PID ($TOPPID) AT CPU ($CPU_LOAD) : $TOPPROCESS" >> /backup/cpu_monitor.log
+			echo "$HOST $DATE PATH:$PATHPID RESTART PID ($TOPPID) AT CPU ($CPU_LOAD) : $TOPPROCESS" >> $cpu_log
 			USERLVE=`echo $TOPPROCESS | awk '{print $2}'`
 			/usr/src/update_lve_package -u $USERLVE -p 0
 			#kill -9 $TOPPID
 			[ $CPUTOP -gt 100 ] && /usr/src/restart_php_user -u $USERLVE
 		fi
 	fi
-	systemctl restart nginx
+	#systemctl restart nginx
 	#/etc/cron.daily/restart_all_phpuser
 fi
 exit 0
